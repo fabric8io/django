@@ -1,18 +1,17 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Copyright 2005-2015 Red Hat, Inc.
+ *
+ *  Red Hat licenses this file to you under the Apache License, version
+ *  2.0 (the "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *  implied.  See the License for the specific language governing
+ *  permissions and limitations under the License.
  */
 package io.fabric8.forge.ipaas.helper;
 
@@ -39,26 +38,29 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.endpointComponent
 
 public class CamelCommandsHelper {
 
-    public static List<InputOptionByGroup> createUIInputsForCamelComponent(String camelComponentName, Map<String, String> currentValues, int maxOptionsPerPage, boolean chooseOnly, Set<String> chosenOptions,
+    public static List<InputOptionByGroup> createUIInputsForCamelComponent(String camelComponentName, Map<String, String> currentValues, int maxOptionsPerPage,
+                                                                           boolean chooseOnly, Set<String> chosenOptions, boolean disableRequired,
                                                                            CamelCatalog camelCatalog, InputComponentFactory componentFactory, ConverterFactory converterFactory, UIContext ui) throws Exception {
-        return doCreateUIInputsForCamel(camelComponentName, currentValues, maxOptionsPerPage, false, false, chooseOnly, chosenOptions,
+        return doCreateUIInputsForCamel(camelComponentName, currentValues, maxOptionsPerPage, false, false, chooseOnly, chosenOptions, disableRequired,
                 camelCatalog, componentFactory, converterFactory, ui, false);
     }
 
-    public static List<InputOptionByGroup> createUIInputsForCamelEndpoint(String camelComponentName, String uri, int maxOptionsPerPage, boolean consumerOnly, boolean producerOnly,
-                                                                          boolean chooseOnly, Set<String> chosenOptions,
+    public static List<InputOptionByGroup> createUIInputsForCamelEndpoint(String camelComponentName, Map<String, String> currentValues, String uri, int maxOptionsPerPage, boolean consumerOnly, boolean producerOnly,
+                                                                          boolean chooseOnly, Set<String> chosenOptions, boolean disableRequired,
                                                                           CamelCatalog camelCatalog, InputComponentFactory componentFactory, ConverterFactory converterFactory, UIContext ui) throws Exception {
 
         if (camelComponentName == null && uri != null) {
             camelComponentName = endpointComponentName(uri);
         }
-        Map<String, String> currentValues = uri != null ? camelCatalog.endpointProperties(uri) : Collections.EMPTY_MAP;
-        return doCreateUIInputsForCamel(camelComponentName, currentValues, maxOptionsPerPage, consumerOnly, producerOnly, chooseOnly, chosenOptions,
+        if (currentValues == null) {
+            currentValues = uri != null ? camelCatalog.endpointProperties(uri) : Collections.EMPTY_MAP;
+        }
+        return doCreateUIInputsForCamel(camelComponentName, currentValues, maxOptionsPerPage, consumerOnly, producerOnly, chooseOnly, chosenOptions, disableRequired,
                 camelCatalog, componentFactory, converterFactory, ui, true);
     }
 
     private static List<InputOptionByGroup> doCreateUIInputsForCamel(String camelComponentName, Map<String, String> currentValues, int maxOptionsPerPage, boolean consumerOnly, boolean producerOnly,
-                                                                     boolean chooseOnly, Set<String> chosenOptions,
+                                                                     boolean chooseOnly, Set<String> chosenOptions, boolean disableRequired,
                                                                      CamelCatalog camelCatalog, InputComponentFactory componentFactory, ConverterFactory converterFactory, UIContext ui, boolean endpoint) throws Exception {
 
         List<InputOptionByGroup> answer = new ArrayList<>();
@@ -159,6 +161,10 @@ public class CamelCommandsHelper {
                         boolean isChosen = chosenOptions.contains(name);
                         currentValue = isChosen ? "true" : "false";
                         prefix = null;
+                    }
+                    // you can disable required for example when editing default values to not be forced to enter a value by forge
+                    if (disableRequired) {
+                        required = "false";
                     }
 
                     Class<Object> inputClazz = CamelCommandsHelper.loadValidInputTypes(javaType, type);
