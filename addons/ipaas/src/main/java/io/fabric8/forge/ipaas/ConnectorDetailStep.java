@@ -17,9 +17,9 @@ package io.fabric8.forge.ipaas;
 
 import javax.inject.Inject;
 
-import io.fabric8.forge.addon.utils.MavenHelpers;
 import io.fabric8.forge.ipaas.dto.ComponentDto;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
+import io.fabric8.forge.ipaas.helper.VersionHelper;
 import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
@@ -109,29 +109,8 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
             catalog.setLabels(labels.getValue().split(","));
         }
 
-        // add maven plugin stuff
-        /*
-          <build>
-    <plugins>
-      <plugin>
-        <groupId>io.fabric8.django</groupId>
-        <artifactId>connector-maven-plugin</artifactId>
-        <version>2.3-SNAPSHOT</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-         */
-
-
         // add connector-maven-plugin
-        String version = MavenHelpers.getVersion("io.fabric8.django", "ipaas");
+        String version = new VersionHelper().getVersion();
         MavenPluginFacet pluginFacet = project.getFacet(MavenPluginFacet.class);
         MavenPluginBuilder plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
