@@ -68,6 +68,16 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
     public Result execute(UIExecutionContext context) throws Exception {
         Project project = getSelectedProject(context);
 
+        // does the connector-json already exists?
+        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+        // this will get a file in the src/main/resources directory where we want to store the connector json file
+        FileResource<?> fileResource = facet.getResource("camel-connector.json");
+
+        // avoid overriding existing file
+        if (fileResource.exists()) {
+            return Results.fail("Connector file src/main/resources/camel-connector.json already exists.");
+        }
+
         String scheme = (String) context.getUIContext().getAttributeMap().get("scheme");
         if (scheme == null) {
             return null;
@@ -75,16 +85,12 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
 
         // does the project already have camel?
         Dependency core = findCamelCoreDependency(project);
-        if (core != null) {
-            return Results.success("Apache Camel is already setup");
+        if (core == null) {
+            core = DependencyBuilder.create().setCoordinate(createCamelCoordinate("camel-core", null));
+            // add camel-core
+            dependencyInstaller.install(project, core);
+            core = findCamelCoreDependency(project);
         }
-
-        core = DependencyBuilder.create().setCoordinate(createCamelCoordinate("camel-core", null));
-
-        // add camel-core
-        dependencyInstaller.install(project, core);
-
-        core = findCamelCoreDependency(project);
 
         // find camel component based on scheme
         ComponentDto dto = createComponentDto(camelCatalog, scheme);
@@ -101,22 +107,17 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
         catalog.setName(name.getValue());
         catalog.setType(type.getValue());
         if (labels.getValue() != null) {
-            catalog.setLabels(type.getValue().split(","));
+            catalog.setLabels(labels.getValue().split(","));
         }
 
         // marshal DTO
         String json = toJson(catalog);
 
-        // write json file
-        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
-        // this will get a file in the src/main/resources directory where we want to store the connector json file
-        FileResource<?> fileResource = facet.getResource("camel-connector.json");
-
-        // create the new file and set the content
+        // write the connector json file
         fileResource.createNewFile();
         fileResource.setContents(json);
 
-        return Results.success();
+        return Results.success("Created connector " + name.getValue());
     }
 
 }

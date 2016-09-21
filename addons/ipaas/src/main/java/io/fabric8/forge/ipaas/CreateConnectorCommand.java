@@ -51,6 +51,10 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
                 .description("Create a new Connector");
     }
 
+    @Override
+    protected boolean requiresCamelSetup() {
+        return false;
+    }
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {

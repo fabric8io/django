@@ -63,9 +63,11 @@ public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand
             Project project = getSelectedProjectOrNull(context);
             if (project != null) {
                 return findCamelCoreDependency(project) != null;
+            } else {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     protected Project getSelectedProjectOrNull(UIContext context) {
