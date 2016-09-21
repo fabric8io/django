@@ -1,4 +1,3 @@
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,62 +16,66 @@
  */
 package io.fabric8.forge.ipaas;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 
-import io.fabric8.forge.ipaas.repository.ConnectionRepository;
+import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
-import org.jboss.forge.addon.ui.input.UIInput;
+import org.jboss.forge.addon.ui.context.UINavigationContext;
+import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
+import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
+import org.jboss.forge.addon.ui.wizard.UIWizard;
 
-@Deprecated
-public class ConnectionEditLabelCommand extends AbstractIPaaSProjectCommand {
-
-    @Inject
-    @WithAttributes(label = "Id", required = true, description = "Connection Id")
-    private UIInput<String> id;
+public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 
     @Inject
-    @WithAttributes(label = "Labels", description = "Labels to assign connector")
-    private UIInput<String> labels;
+    @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
+    private UISelectOne<String> componentName;
 
     @Inject
-    private ConnectionRepository repository;
-
-    public ConnectionRepository getRepository() {
-        return repository;
-    }
-
-    public void setRepository(ConnectionRepository repository) {
-        this.repository = repository;
-    }
-
-    @Override
-    public boolean isEnabled(UIContext context) {
-        return true;
-    }
+    protected CamelCatalog camelCatalog;
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(ConnectionEditLabelCommand.class)
-                .name("iPaaS: Edit Labels").category(Categories.create(CATEGORY))
-                .description("Edit labels on existing connector");
+        return Metadata.forCommand(CreateConnectorCommand.class)
+                .name("iPaaS: Create Connector").category(Categories.create(CATEGORY))
+                .description("Create a new Connector");
+    }
+
+    @Override
+    protected boolean requiresCamelSetup() {
+        return false;
     }
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(id).add(labels);
+        List<String> names = new ArrayList<>();
+        names.addAll(camelCatalog.findComponentNames());
+        // names.add(0, "<none>");
+
+        componentName.setValueChoices(names);
+        builder.add(componentName);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
-        repository.editLabels(id.getValue(), labels.getValue());
-        return Results.success();
+        return null;
+    }
+
+    @Override
+    public NavigationResult next(UINavigationContext context) throws Exception {
+        String scheme = componentName.getValue();
+        context.getUIContext().getAttributeMap().put("scheme", scheme);
+
+        return Results.navigateTo(ConnectorDetailStep.class);
     }
 }
