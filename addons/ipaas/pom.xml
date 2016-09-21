@@ -62,12 +62,12 @@
     <dependency>
       <groupId>io.fabric8.forge</groupId>
       <artifactId>utils</artifactId>
-      <version>${project.version}</version>
+      <version>${fabric8.forge.version}</version>
     </dependency>
     <dependency>
       <groupId>io.fabric8.forge</groupId>
       <artifactId>camel-tooling-util</artifactId>
-      <version>${project.version}</version>
+      <version>${fabric8.forge.version}</version>
     </dependency>
 
     <!-- we use dtos with jackson annotations -->
