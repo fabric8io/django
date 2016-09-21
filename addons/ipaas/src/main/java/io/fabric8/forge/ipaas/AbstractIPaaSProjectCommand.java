@@ -15,12 +15,15 @@
  */
 package io.fabric8.forge.ipaas;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.forge.addon.utils.CamelProjectHelper;
+import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import org.jboss.forge.addon.convert.ConverterFactory;
 import org.jboss.forge.addon.dependencies.Coordinate;
 import org.jboss.forge.addon.dependencies.Dependency;
@@ -34,6 +37,7 @@ import org.jboss.forge.addon.projects.facets.WebResourcesFacet;
 import org.jboss.forge.addon.projects.ui.AbstractProjectCommand;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIContext;
+import org.jboss.forge.addon.ui.context.UIContextProvider;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UIRegion;
 
@@ -70,8 +74,33 @@ public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand
         return true;
     }
 
+    protected FileResource getCamelConnectorFile(UIContextProvider context) {
+        return getCamelConnectorFile(context.getUIContext());
+    }
+
+    protected FileResource getCamelConnectorFile(UIContext context) {
+        Project project = getSelectedProjectOrNull(context);
+        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+        return facet.getResource("camel-connector.json");
+    }
+
     protected Project getSelectedProjectOrNull(UIContext context) {
         return Projects.getSelectedProject(this.getProjectFactory(), context);
+    }
+
+    protected ConnectionCatalogDto loadCamelConnectionDto(Project project) {
+        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+        FileResource file = facet.getResource("camel-connector.json");
+        String json = file.getContents();
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(json, ConnectionCatalogDto.class);
+        } catch (IOException e) {
+            // error
+        }
+
+        return null;
     }
 
     protected boolean isRunningInGui(UIContext context) {

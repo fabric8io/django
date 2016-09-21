@@ -26,6 +26,61 @@ import org.apache.camel.catalog.JSonSchemaHelper;
 
 public class CamelCatalogHelper {
 
+    public static String endpointComponentName(String uri) {
+        if (uri != null) {
+            int idx = uri.indexOf(":");
+            if (idx > 0) {
+                return uri.substring(0, idx);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Whether the component is consumer only
+     */
+    public static boolean isComponentConsumerOnly(CamelCatalog camelCatalog, String scheme) {
+        // use the camel catalog
+        String json = camelCatalog.componentJSonSchema(scheme);
+        if (json == null) {
+            return false;
+        }
+
+        List<Map<String, String>> data = JSonSchemaHelper.parseJsonSchema("component", json, false);
+        if (data != null) {
+            for (Map<String, String> propertyMap : data) {
+                String consumerOnly = propertyMap.get("consumerOnly");
+                if (consumerOnly != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether the component is consumer only
+     */
+    public static boolean isComponentProducerOnly(CamelCatalog camelCatalog, String scheme) {
+        // use the camel catalog
+        String json = camelCatalog.componentJSonSchema(scheme);
+        if (json == null) {
+            return false;
+        }
+
+        List<Map<String, String>> data = JSonSchemaHelper.parseJsonSchema("component", json, false);
+        if (data != null) {
+            for (Map<String, String> propertyMap : data) {
+                String consumerOnly = propertyMap.get("producerOnly");
+                if (consumerOnly != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
     public static ComponentDto createComponentDto(CamelCatalog camelCatalog, String scheme) {
         // use the camel catalog
         String json = camelCatalog.componentJSonSchema(scheme);

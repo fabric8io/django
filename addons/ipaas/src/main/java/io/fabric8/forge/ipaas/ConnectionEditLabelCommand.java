@@ -31,6 +31,7 @@ import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 
+@Deprecated
 public class ConnectionEditLabelCommand extends AbstractIPaaSProjectCommand {
 
     @Inject

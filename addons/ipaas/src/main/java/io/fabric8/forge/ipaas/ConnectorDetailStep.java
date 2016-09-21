@@ -68,13 +68,9 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
     public Result execute(UIExecutionContext context) throws Exception {
         Project project = getSelectedProject(context);
 
-        // does the connector-json already exists?
-        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
-        // this will get a file in the src/main/resources directory where we want to store the connector json file
-        FileResource<?> fileResource = facet.getResource("camel-connector.json");
-
-        // avoid overriding existing file
+        FileResource<?> fileResource = getCamelConnectorFile(context);
         if (fileResource.exists()) {
+            // avoid overriding existing file
             return Results.fail("Connector file src/main/resources/camel-connector.json already exists.");
         }
 

@@ -34,6 +34,7 @@ import org.jboss.forge.addon.ui.util.Metadata;
 
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
+@Deprecated
 public class ConnectionSearchCommand extends AbstractIPaaSProjectCommand {
 
     @Inject

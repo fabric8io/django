@@ -67,7 +67,7 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
     }
 
     @Override
-    public Result execute(UIExecutionContext uiExecutionContext) throws Exception {
+    public Result execute(UIExecutionContext context) throws Exception {
         return null;
     }
 
