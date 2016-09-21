@@ -16,10 +16,9 @@
 package io.fabric8.forge.ipaas;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.inject.Inject;
 
 import io.fabric8.forge.ipaas.dto.ComponentDto;
@@ -48,7 +47,7 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.createComponentDt
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.createUIInputsForCamelEndpoint;
 
 @FacetConstraint({ResourcesFacet.class})
-public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand implements UIWizard {
+public class EditConnectorOptionsCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 
     private static final int MAX_OPTIONS = 20;
 
@@ -60,9 +59,9 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(ChooseConnectorOptionsCommand.class)
-                .name("iPaaS: Choose Connector Options").category(Categories.create(CATEGORY))
-                .description("Choose which options to enable in existing Connector");
+        return Metadata.forCommand(EditConnectorOptionsCommand.class)
+                .name("iPaaS: Edit Connector Options").category(Categories.create(CATEGORY))
+                .description("Edit default values for existing Connector options");
     }
 
     @Override
@@ -111,15 +110,13 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
         String name = dto.getName();
 
         // what are the current chosen options
-        Set<String> chosenOptions = new LinkedHashSet<>();
-        if (dto.getEndpointOptions() != null) {
-            for (String option : dto.getEndpointOptions()) {
-                chosenOptions.add(option);
-            }
+        Map<String, String> currentValues = new LinkedHashMap<>();
+        if (dto.getEndpointValues() != null) {
+            currentValues.putAll(dto.getEndpointValues());
         }
 
-        List<InputOptionByGroup> groups = createUIInputsForCamelEndpoint(camelComponentName, null, null, MAX_OPTIONS,
-                component.isConsumerOnly(), component.isProducerOnly(), true, chosenOptions, false,
+        List<InputOptionByGroup> groups = createUIInputsForCamelEndpoint(camelComponentName, currentValues, null, MAX_OPTIONS,
+                component.isConsumerOnly(), component.isProducerOnly(), false, null, true,
                 camelCatalog, componentFactory, converterFactory, ui);
 
         // need all inputs in a list as well
@@ -133,7 +130,7 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
         for (int i = 0; i < pages; i++) {
             boolean last = i == pages - 1;
             InputOptionByGroup current = groups.get(i);
-            ChooseConnectorOptionsStep step = new ChooseConnectorOptionsStep(projectFactory, name,
+            EditConnectorOptionsStep step = new EditConnectorOptionsStep(projectFactory, name,
                     current.getGroup(), allInputs, current.getInputs(), last, i, pages);
             builder.add(step);
         }

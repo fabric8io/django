@@ -15,9 +15,9 @@
  */
 package io.fabric8.forge.ipaas;
 
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import org.jboss.forge.addon.projects.ProjectFactory;
@@ -37,7 +37,7 @@ import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
-public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
+public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     private final String connectorName;
     private final String group;
@@ -47,11 +47,11 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
     private final int index;
     private final int total;
 
-    public ChooseConnectorOptionsStep(ProjectFactory projectFactory,
-                                      String connectorName, String group,
-                                      List<InputComponent> allInputs,
-                                      List<InputComponent> inputs,
-                                      boolean last, int index, int total) {
+    public EditConnectorOptionsStep(ProjectFactory projectFactory,
+                                    String connectorName, String group,
+                                    List<InputComponent> allInputs,
+                                    List<InputComponent> inputs,
+                                    boolean last, int index, int total) {
         this.projectFactory = projectFactory;
         this.connectorName = connectorName;
         this.group = group;
@@ -77,9 +77,9 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(ChooseConnectorOptionsStep.class).name(
-                "iPaaS: Choose options").category(Categories.create(CATEGORY))
-                .description(String.format("Choose %s options (%s of %s)", group, index, total));
+        return Metadata.forCommand(EditConnectorOptionsStep.class).name(
+                "iPaaS: Edit options").category(Categories.create(CATEGORY))
+                .description(String.format("Configure %s options (%s of %s)", group, index, total));
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
     public Result execute(UIExecutionContext context) throws Exception {
         // only execute if we are last
         if (last) {
-            Set<String> chosenOptions = new LinkedHashSet<>();
+            Map<String, String> currentValues = new LinkedHashMap<>();
 
             // pickup the chosen values
             for (InputComponent input : allInputs) {
@@ -110,9 +110,7 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
                 if (input.hasValue()) {
                     String value = input.getValue().toString();
                     if (value != null) {
-                        if ("true".equals(value)) {
-                            chosenOptions.add(key);
-                        }
+                        currentValues.put(key, value);
                     }
                 }
             }
@@ -120,11 +118,10 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
             // load the dto
             ConnectionCatalogDto dto = loadCamelConnectionDto(getSelectedProject(context));
             if (dto != null) {
-                if (chosenOptions.isEmpty()) {
-                    dto.setEndpointOptions(null);
+                if (currentValues.isEmpty()) {
+                    dto.setEndpointValues(null);
                 } else {
-                    String[] values = chosenOptions.toArray(new String[chosenOptions.size()]);
-                    dto.setEndpointOptions(values);
+                    dto.setEndpointValues(currentValues);
                 }
             }
 
@@ -135,7 +132,7 @@ public class ChooseConnectorOptionsStep extends AbstractIPaaSProjectCommand impl
             FileResource<?> fileResource = getCamelConnectorFile(context);
             fileResource.setContents(json);
 
-            Results.success("Updated chosen options on connector " + dto.getName());
+            Results.success("Updated default values on connector " + dto.getName());
         }
 
         return null;
