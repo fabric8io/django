@@ -144,6 +144,7 @@
 
 
   <modules>
+    <module>connector-maven-plugin</module>
     <module>addons</module>
   </modules>
 
