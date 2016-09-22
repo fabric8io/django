@@ -15,8 +15,7 @@
  */
 package io.fabric8.forge.ipaas;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import javax.inject.Inject;
 
 import org.apache.camel.catalog.CamelCatalog;
@@ -26,6 +25,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
+import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -39,9 +39,23 @@ import org.jboss.forge.addon.ui.wizard.UIWizard;
 @FacetConstraint({ResourcesFacet.class})
 public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 
+    private static String[] sources = new String[]{"Anywhere", "From", "To"};
+
     @Inject
-    @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
-    private UISelectOne<String> componentName;
+    @WithAttributes(label = "Name", required = true, description = "Name of connector")
+    private UIInput<String> name;
+
+    @Inject
+    @WithAttributes(label = "Type", description = "Type of connector")
+    private UIInput<String> type;
+
+    @Inject
+    @WithAttributes(label = "Labels", description = "Labels of connector (separate by comma)")
+    private UIInput<String> labels;
+
+    @Inject
+    @WithAttributes(label = "source", required = true, defaultValue = "Anywhere", description = "Where the connector can be used")
+    private UISelectOne<String> source;
 
     @Inject
     protected CamelCatalog camelCatalog;
@@ -60,12 +74,8 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        List<String> names = new ArrayList<>();
-        names.addAll(camelCatalog.findComponentNames());
-        // names.add(0, "<none>");
-
-        componentName.setValueChoices(names);
-        builder.add(componentName);
+        builder.add(name).add(type).add(labels).add(source);
+        source.setValueChoices(Arrays.asList(sources));
     }
 
     @Override
@@ -75,9 +85,11 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
-        String scheme = componentName.getValue();
-        context.getUIContext().getAttributeMap().put("scheme", scheme);
+        context.getUIContext().getAttributeMap().put("name", name.getValue());
+        context.getUIContext().getAttributeMap().put("type", type.getValue());
+        context.getUIContext().getAttributeMap().put("labels", labels.getValue());
+        context.getUIContext().getAttributeMap().put("source", source.getValue());
 
-        return Results.navigateTo(ConnectorDetailStep.class);
+        return Results.navigateTo(ConnectorSelectComponentStep.class);
     }
 }

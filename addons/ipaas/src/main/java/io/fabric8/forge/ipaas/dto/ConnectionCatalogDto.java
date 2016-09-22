@@ -30,6 +30,7 @@ public class ConnectionCatalogDto {
     private String name;
     private String type;
     private String[] labels;
+    private String source;
     private Map<String, String> componentValues;
     private String[] endpointOptions;
     private Map<String, String> endpointValues;
@@ -88,6 +89,14 @@ public class ConnectionCatalogDto {
 
     public void setLabels(String[] labels) {
         this.labels = labels;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String[] getEndpointOptions() {
