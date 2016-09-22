@@ -15,6 +15,8 @@
  */
 package io.fabric8.forge.ipaas;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 
 import io.fabric8.forge.ipaas.dto.ComponentDto;
@@ -33,7 +35,7 @@ import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
-import org.jboss.forge.addon.ui.input.UIInput;
+import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
@@ -41,21 +43,15 @@ import org.jboss.forge.addon.ui.result.Results;
 import static io.fabric8.forge.addon.utils.CamelProjectHelper.hasDependency;
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.createComponentDto;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentConsumerOnly;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProducerOnly;
 
 @FacetConstraint({ResourcesFacet.class})
-public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
+public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
 
     @Inject
-    @WithAttributes(label = "Name", required = true, description = "Name of connector")
-    private UIInput<String> name;
-
-    @Inject
-    @WithAttributes(label = "Type", description = "Type of connector")
-    private UIInput<String> type;
-
-    @Inject
-    @WithAttributes(label = "Labels", description = "Labels of connector (separate by comma)")
-    private UIInput<String> labels;
+    @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
+    private UISelectOne<String> componentName;
 
     @Inject
     private DependencyInstaller dependencyInstaller;
@@ -65,22 +61,56 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(name).add(type).add(labels);
+        builder.add(componentName);
+
+        // should we limit the components to be either consumer or producer only
+        boolean consumerOnly = false;
+        boolean producerOnly = false;
+        String source = (String) builder.getUIContext().getAttributeMap().get("source");
+        if ("From".equals(source)) {
+            consumerOnly = true;
+        } else if ("To".equals(source)) {
+            producerOnly = true;
+        }
+
+        List<String> filtered = new ArrayList<>();
+        if (consumerOnly) {
+            for (String name : camelCatalog.findComponentNames()) {
+                // skip if the component is ONLY for producer (yes its correct)
+                if (isComponentProducerOnly(camelCatalog, name)) {
+                    continue;
+                }
+                filtered.add(name);
+            }
+        } else if (producerOnly) {
+            for (String name : camelCatalog.findComponentNames()) {
+                // skip if the component is ONLY for consumer (yes its correct)
+                if (isComponentConsumerOnly(camelCatalog, name)) {
+                    continue;
+                }
+                filtered.add(name);
+            }
+        } else {
+            // include them all
+            filtered.addAll(camelCatalog.findComponentNames());
+        }
+
+        componentName.setValueChoices(filtered);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
+        String name = (String) context.getUIContext().getAttributeMap().get("name");
+        String type = (String) context.getUIContext().getAttributeMap().get("type");
+        String labels = (String) context.getUIContext().getAttributeMap().get("labels");
+        String source = (String) context.getUIContext().getAttributeMap().get("source");
+
         Project project = getSelectedProject(context);
 
         FileResource<?> fileResource = getCamelConnectorFile(context);
         if (fileResource != null && fileResource.exists()) {
             // avoid overriding existing file
             return Results.fail("Connector file src/main/resources/camel-connector.json already exists.");
-        }
-
-        String scheme = (String) context.getUIContext().getAttributeMap().get("scheme");
-        if (scheme == null) {
-            return null;
         }
 
         // does the project already have camel?
@@ -93,6 +123,7 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
         }
 
         // find camel component based on scheme
+        String scheme = componentName.getValue();
         ComponentDto dto = createComponentDto(camelCatalog, scheme);
         if (dto == null) {
             return Results.fail("Cannot find camel component with name " + scheme);
@@ -110,11 +141,12 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
         catalog.setGroupId(dto.getGroupId());
         catalog.setArtifactId(dto.getArtifactId());
         catalog.setVersion(dto.getVersion());
-        catalog.setName(name.getValue());
-        catalog.setType(type.getValue());
-        if (labels.getValue() != null) {
-            catalog.setLabels(labels.getValue().split(","));
+        catalog.setName(name);
+        catalog.setType(type);
+        if (labels != null) {
+            catalog.setLabels(labels.split(","));
         }
+        catalog.setSource(source);
 
         // add connector-maven-plugin if missing
         String version = new VersionHelper().getVersion();
@@ -137,7 +169,7 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
-        return Results.success("Created connector " + name.getValue());
+        return Results.success("Created connector " + name);
     }
 
 }
