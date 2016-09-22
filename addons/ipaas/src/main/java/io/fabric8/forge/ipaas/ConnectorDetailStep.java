@@ -103,6 +103,9 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
 
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
+        catalog.setGroupId(dto.getGroupId());
+        catalog.setArtifactId(dto.getArtifactId());
+        catalog.setVersion(dto.getVersion());
         catalog.setName(name.getValue());
         catalog.setType(type.getValue());
         if (labels.getValue() != null) {
