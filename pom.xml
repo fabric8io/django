@@ -144,6 +144,7 @@
 
 
   <modules>
+    <module>archetypes-catalog</module>
     <module>connector-maven-plugin</module>
     <module>addons</module>
   </modules>
