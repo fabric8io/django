@@ -19,7 +19,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.google.common.base.Objects;
-import io.fabric8.forge.addon.utils.VersionHelper;
+import io.fabric8.forge.ipaas.helper.VersionHelper;
 import io.fabric8.utils.Strings;
 import org.apache.maven.archetype.catalog.Archetype;
 import org.jboss.forge.addon.maven.projects.archetype.ui.ConstantArchetypeSelectionWizardStep;
@@ -48,13 +48,13 @@ public abstract class DjangoArchetypeStep extends ConstantArchetypeSelectionWiza
                     }
                 }
                 if (Strings.isNullOrBlank(version)) {
-                    version = VersionHelper.fabric8ArchetypesVersion();
+                    version = new VersionHelper().getVersion();
                 }
                 if (version != null) {
                     setArchetypeVersion(version);
                 } else {
                     throw new IllegalArgumentException("Could not find an archetype for id " + archetypeArtifactId
-                            + " in the archetype catalog " + catalogFactory + " or find version for environment variable " + VersionHelper.ENV_FABRIC8_ARCHETYPES_VERSION);
+                            + " in the archetype catalog " + catalogFactory);
                 }
             }
         }
