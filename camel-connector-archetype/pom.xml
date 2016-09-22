@@ -27,7 +27,7 @@
     <version>2.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>came-connector-archetype</artifactId>
+  <artifactId>camel-connector-archetype</artifactId>
   <name>Fabric8 :: Django :: Camel Connector Archetype</name>
   <description>Creates a new Camel Connector</description>
   <packaging>maven-archetype</packaging>
