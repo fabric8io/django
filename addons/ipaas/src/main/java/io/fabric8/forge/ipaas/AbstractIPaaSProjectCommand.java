@@ -80,8 +80,12 @@ public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand
 
     protected FileResource getCamelConnectorFile(UIContext context) {
         Project project = getSelectedProjectOrNull(context);
-        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
-        return facet.getResource("camel-connector.json");
+        if (project != null && project.hasFacet(ResourcesFacet.class)) {
+            ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+            return facet.getResource("camel-connector.json");
+        } else {
+            return null;
+        }
     }
 
     protected Project getSelectedProjectOrNull(UIContext context) {
@@ -89,15 +93,17 @@ public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand
     }
 
     protected ConnectionCatalogDto loadCamelConnectionDto(Project project) {
-        ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
-        FileResource file = facet.getResource("camel-connector.json");
-        String json = file.getContents();
+        if (project.hasFacet(ResourcesFacet.class)) {
+            ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+            FileResource file = facet.getResource("camel-connector.json");
+            String json = file.getContents();
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(json, ConnectionCatalogDto.class);
-        } catch (IOException e) {
-            // error
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, ConnectionCatalogDto.class);
+            } catch (IOException e) {
+                // error
+            }
         }
 
         return null;

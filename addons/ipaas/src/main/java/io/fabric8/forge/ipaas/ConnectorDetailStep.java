@@ -38,6 +38,7 @@ import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 
+import static io.fabric8.forge.addon.utils.CamelProjectHelper.hasDependency;
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.createComponentDto;
 
@@ -72,7 +73,7 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
         Project project = getSelectedProject(context);
 
         FileResource<?> fileResource = getCamelConnectorFile(context);
-        if (fileResource.exists()) {
+        if (fileResource != null && fileResource.exists()) {
             // avoid overriding existing file
             return Results.fail("Connector file src/main/resources/camel-connector.json already exists.");
         }
@@ -97,9 +98,12 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
             return Results.fail("Cannot find camel component with name " + scheme);
         }
 
-        DependencyBuilder component = DependencyBuilder.create().setGroupId(dto.getGroupId())
-                .setArtifactId(dto.getArtifactId()).setVersion(core.getCoordinate().getVersion());
-        dependencyInstaller.install(project, component);
+        // install component as dependency
+        if (!hasDependency(project, dto.getGroupId(), dto.getArtifactId(), core.getCoordinate().getVersion())) {
+            DependencyBuilder component = DependencyBuilder.create().setGroupId(dto.getGroupId())
+                    .setArtifactId(dto.getArtifactId()).setVersion(core.getCoordinate().getVersion());
+            dependencyInstaller.install(project, component);
+        }
 
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
@@ -112,16 +116,22 @@ public class ConnectorDetailStep extends AbstractIPaaSProjectCommand {
             catalog.setLabels(labels.getValue().split(","));
         }
 
-        // add connector-maven-plugin
+        // add connector-maven-plugin if missing
         String version = new VersionHelper().getVersion();
         MavenPluginFacet pluginFacet = project.getFacet(MavenPluginFacet.class);
         MavenPluginBuilder plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
         plugin.addExecution(ExecutionBuilder.create().setId("connector").addGoal("jar"));
-        pluginFacet.addPlugin(plugin);
+        if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
+            pluginFacet.addPlugin(plugin);
+        }
 
         // marshal DTO
         String json = toJson(catalog);
+
+        if (fileResource == null) {
+            fileResource = getCamelConnectorFile(context);
+        }
 
         // write the connector json file
         fileResource.createNewFile();

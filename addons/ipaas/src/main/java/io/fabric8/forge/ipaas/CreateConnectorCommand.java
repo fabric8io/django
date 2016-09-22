@@ -20,6 +20,8 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.camel.catalog.CamelCatalog;
+import org.jboss.forge.addon.facets.constraints.FacetConstraint;
+import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -34,6 +36,7 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizard;
 
+@FacetConstraint({ResourcesFacet.class})
 public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 
     @Inject
