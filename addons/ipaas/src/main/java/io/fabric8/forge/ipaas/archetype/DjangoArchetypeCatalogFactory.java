@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
 
-import io.fabric8.forge.addon.utils.VersionHelper;
+import io.fabric8.forge.ipaas.helper.VersionHelper;
 import org.apache.maven.archetype.catalog.ArchetypeCatalog;
 import org.apache.maven.archetype.catalog.io.xpp3.ArchetypeCatalogXpp3Reader;
 import org.jboss.forge.addon.dependencies.Coordinate;
@@ -58,7 +58,7 @@ public class DjangoArchetypeCatalogFactory implements ArchetypeCatalogFactory {
     @Override
     public ArchetypeCatalog getArchetypeCatalog() {
         if (cachedArchetypes == null) {
-            String version = VersionHelper.fabric8ArchetypesVersion();
+            String version = new VersionHelper().getVersion();
 
             Coordinate coordinate = CoordinateBuilder.create()
                     .setGroupId("io.fabric8.django")

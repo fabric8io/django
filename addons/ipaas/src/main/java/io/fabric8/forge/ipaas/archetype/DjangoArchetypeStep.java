@@ -30,7 +30,7 @@ public abstract class DjangoArchetypeStep extends ConstantArchetypeSelectionWiza
     private DjangoArchetypeCatalogFactory catalogFactory;
 
     public DjangoArchetypeStep() {
-        setArchetypeGroupId("io.fabric8.archetypes");
+        setArchetypeGroupId("io.fabric8.django");
     }
 
     @Override
