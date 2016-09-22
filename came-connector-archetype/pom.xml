@@ -29,7 +29,12 @@
 
   <artifactId>came-connector-archetype</artifactId>
   <name>Fabric8 :: Django :: Camel Connector Archetype</name>
+  <description>Creates a new Camel Connector</description>
   <packaging>maven-archetype</packaging>
+
+  <properties>
+    <camel-version>2.17.3</camel-version>
+  </properties>
 
   <build>
     <extensions>
