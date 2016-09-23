@@ -29,6 +29,7 @@ import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
+import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
@@ -45,6 +46,8 @@ import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.createComponentDto;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentConsumerOnly;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProducerOnly;
+import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
+import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
 
 @FacetConstraint({ResourcesFacet.class})
 public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
@@ -101,6 +104,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         String name = (String) context.getUIContext().getAttributeMap().get("name");
+        String description = (String) context.getUIContext().getAttributeMap().get("description");
         String type = (String) context.getUIContext().getAttributeMap().get("type");
         String labels = (String) context.getUIContext().getAttributeMap().get("labels");
         String source = (String) context.getUIContext().getAttributeMap().get("source");
@@ -142,6 +146,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         catalog.setArtifactId(dto.getArtifactId());
         catalog.setVersion(dto.getVersion());
         catalog.setName(name);
+        catalog.setDescription(description);
         catalog.setType(type);
         if (labels != null) {
             catalog.setLabels(labels.split(","));
@@ -169,7 +174,36 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
+        // create Camel component file
+        String className = asJavaClassName(name) + "Component";
+        String schemeName = asSchemeName(name);
+        String packageName = getBasePackageName(project);
+        FileResource<?> comp = getCamelComponentFile(project, schemeName);
+        comp.createNewFile();
+        comp.setContents("class=" + packageName + "." + className);
+
+        // create Java source code for component
+        // build json schema for component that only has the selectable options
+
         return Results.success("Created connector " + name);
+    }
+
+    protected FileResource getCamelComponentFile(Project project, String scheme) {
+        if (project != null && project.hasFacet(ResourcesFacet.class)) {
+            ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+            return facet.getResource("META-INF/services/org/apache/camel/component/" + scheme);
+        } else {
+            return null;
+        }
+    }
+
+    protected String getBasePackageName(Project project) {
+        if (project != null && project.hasFacet(JavaSourceFacet.class)) {
+            JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
+            String base = java.getBasePackage();
+            return base;
+        }
+        return null;
     }
 
 }

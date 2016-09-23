@@ -41,9 +41,15 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     private static String[] sources = new String[]{"Anywhere", "From", "To"};
 
+    // TODO: name should be like Camel component name (eg lowercase and no digits/space, only dash)
+
     @Inject
-    @WithAttributes(label = "Name", required = true, description = "Name of connector")
+    @WithAttributes(label = "Name", required = true, description = "Name of connector (only a..z and - chars permitted)")
     private UIInput<String> name;
+
+    @Inject
+    @WithAttributes(label = "Description", description = "Description of connector")
+    private UIInput<String> description;
 
     @Inject
     @WithAttributes(label = "Type", description = "Type of connector")
@@ -74,7 +80,7 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(name).add(type).add(labels).add(source);
+        builder.add(name).add(description).add(type).add(labels).add(source);
         source.setValueChoices(Arrays.asList(sources));
     }
 
@@ -86,6 +92,7 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
         context.getUIContext().getAttributeMap().put("name", name.getValue());
+        context.getUIContext().getAttributeMap().put("description", description.getValue());
         context.getUIContext().getAttributeMap().put("type", type.getValue());
         context.getUIContext().getAttributeMap().put("labels", labels.getValue());
         context.getUIContext().getAttributeMap().put("source", source.getValue());
