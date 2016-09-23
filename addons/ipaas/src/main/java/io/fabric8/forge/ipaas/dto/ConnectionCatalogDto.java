@@ -26,6 +26,7 @@ public class ConnectionCatalogDto {
     private String groupId;
     private String artifactId;
     private String version;
+    private String javaType;
 
     private String name;
     private String description;
@@ -66,6 +67,14 @@ public class ConnectionCatalogDto {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
     }
 
     public String getName() {

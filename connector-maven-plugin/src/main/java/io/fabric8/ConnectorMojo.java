@@ -104,7 +104,23 @@ public class ConnectorMojo extends AbstractJarMojo {
                     jsonSchema.append(endpointOptions);
                     jsonSchema.append("}\n");
 
-                    getLog().info(jsonSchema.toString());
+                    String newJson = jsonSchema.toString();
+
+                    // parse ourselves
+                    rows = parseJsonSchema("component", newJson, false);
+                    String newScheme = getOption(rows, "scheme");
+
+                    // write the json file to the target directory as if camel apt would do it
+                    String javaType = (String) dto.get("javaType");
+                    String dir = javaType.substring(0, javaType.lastIndexOf("."));
+                    dir = dir.replace('.', '/');
+                    File subDir = new File(classesDirectory, dir);
+                    String name = newScheme + ".json";
+                    File out = new File(subDir, name);
+
+                    FileOutputStream fos = new FileOutputStream(out, false);
+                    fos.write(newJson.getBytes());
+                    fos.close();
                 }
 
                 // build json schema for component that only has the selectable options

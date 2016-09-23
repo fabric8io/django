@@ -152,11 +152,26 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
             dependencyInstaller.install(project, component);
         }
 
+        // ensure scheme is valid
+        String schemeName = asSchemeName(name);
+
+        // create Camel component file
+        String className = asJavaClassName(name) + "Component";
+        String packageName = getBasePackageName(project);
+        String javaType = packageName + "." + className;
+        FileResource<?> comp = getCamelComponentFile(project, schemeName);
+        comp.createNewFile();
+        comp.setContents("class=" + javaType);
+
+        // create Java source code for component
+        createJavaSourceForComponent(project, packageName, className);
+
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
         catalog.setGroupId(dto.getGroupId());
         catalog.setArtifactId(dto.getArtifactId());
         catalog.setVersion(dto.getVersion());
+        catalog.setJavaType(javaType);
         catalog.setName(name);
         catalog.setDescription(description);
         catalog.setType(type);
@@ -185,18 +200,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
-        // ensure scheme is valid
-        String schemeName = asSchemeName(name);
-
-        // create Camel component file
-        String className = asJavaClassName(name) + "Component";
-        String packageName = getBasePackageName(project);
-        FileResource<?> comp = getCamelComponentFile(project, schemeName);
-        comp.createNewFile();
-        comp.setContents("class=" + packageName + "." + className);
-
-        // create Java source code for component
-        createJavaSourceForComponent(project, packageName, className);
 
         return Results.success("Created connector " + name);
     }
