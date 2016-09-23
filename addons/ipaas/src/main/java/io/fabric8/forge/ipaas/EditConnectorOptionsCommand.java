@@ -132,7 +132,7 @@ public class EditConnectorOptionsCommand extends AbstractIPaaSProjectCommand imp
         for (int i = 0; i < pages; i++) {
             boolean last = i == pages - 1;
             InputOptionByGroup current = groups.get(i);
-            EditConnectorOptionsStep step = new EditConnectorOptionsStep(projectFactory, name,
+            EditConnectorOptionsStep step = new EditConnectorOptionsStep(projectFactory, camelCatalog, name, camelComponentName,
                     current.getGroup(), allInputs, current.getInputs(), last, i, pages);
             builder.add(step);
         }
