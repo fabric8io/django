@@ -122,17 +122,35 @@ public class ConnectorMojo extends AbstractJarMojo {
         return null;
     }
 
+    private String getOption(List<Map<String, String>> rows, String key) {
+        for (Map<String, String> row : rows) {
+            if (row.containsKey(key)) {
+                return row.get(key);
+            }
+        }
+        return null;
+    }
+
     private String buildComponentSchemaHeader(List<Map<String, String>> rows, Map dto) throws Exception {
+        String baseScheme = (String) dto.get("scheme");
         String source = (String) dto.get("source");
         String title = (String) dto.get("name");
         String scheme = camelCaseToDash(title);
         String description = (String) dto.get("description");
-        // dto has labels (but as single string)
-        String label = "foo,bar";
-        String async = "true"; // TODO: take from existing
+        // dto has labels
+        String label = null;
+        List<String> labels = (List<String>) dto.get("labels");
+        if (labels != null) {
+            CollectionStringBuffer csb = new CollectionStringBuffer(",");
+            for (String s : labels) {
+                csb.append(s);
+            }
+            label = csb.toString();
+        }
+        String async = getOption(rows, "async");
         String producerOnly = "To".equals(source) ? "true" : null;
         String consumerOnly = "From".equals(source) ? "true" : null;
-        String lenientProperties = "true"; // TODO: take from existing
+        String lenientProperties = getOption(rows, "lenientProperties");
         String javaType = extractJavaType(scheme);
         String groupId = getProject().getGroupId();
         String artifactId = getProject().getArtifactId();
@@ -141,13 +159,20 @@ public class ConnectorMojo extends AbstractJarMojo {
         StringBuilder sb = new StringBuilder();
         sb.append(" \"component\": {\n");
         sb.append("    \"kind\": \"component\",\n");
+        sb.append("    \"baseScheme\": \"" + baseScheme + "\",\n");
         sb.append("    \"scheme\": \"" + scheme + "\",\n");
         sb.append("    \"syntax\": \"" + scheme + "\",\n");
         sb.append("    \"title\": \"" + title + "\",\n");
-        sb.append("    \"description\": \"" + description + "\",\n");
-        sb.append("    \"label\": \"" + label + "\",\n");
+        if (description != null) {
+            sb.append("    \"description\": \"" + description + "\",\n");
+        }
+        if (label != null) {
+            sb.append("    \"label\": \"" + label + "\",\n");
+        }
         sb.append("    \"deprecated\": \"false\",\n");
-        sb.append("    \"async\": \"" + async + "\",\n");
+        if (async != null) {
+            sb.append("    \"async\": \"" + async + "\",\n");
+        }
         if (producerOnly != null) {
             sb.append("    \"producerOnly\": \"" + producerOnly + "\",\n");
         } else if (consumerOnly != null) {
