@@ -107,6 +107,8 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
             return null;
         }
 
+        boolean isConsumerOnly = "From".equals(dto.getSource());
+        boolean isProducerOnly = "To".equals(dto.getSource());
         String camelComponentName = dto.getScheme();
         String name = dto.getName();
 
@@ -119,7 +121,7 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
         }
 
         List<InputOptionByGroup> groups = createUIInputsForCamelEndpoint(camelComponentName, null, null, MAX_OPTIONS,
-                component.isConsumerOnly(), component.isProducerOnly(), true, chosenOptions, false,
+                isConsumerOnly, isProducerOnly, true, chosenOptions, false,
                 camelCatalog, componentFactory, converterFactory, ui);
 
         // need all inputs in a list as well
