@@ -68,15 +68,14 @@ public class ConnectorMojo extends AbstractJarMojo {
         if (file.exists()) {
             embedCamelComponentSchema(file);
 
-            // create a Camel component with the possible options
-
+            // build json schema for component that only has the selectable options
         }
 
         return super.createArchive();
     }
 
     /**
-     * Finds and emabeds the Camel component JSon schema file
+     * Finds and embeds the Camel component JSon schema file
      */
     private void embedCamelComponentSchema(File file) throws MojoExecutionException {
         try {

@@ -140,6 +140,14 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
             dependencyInstaller.install(project, component);
         }
 
+        // install camel-connector as dependency
+        String version = new VersionHelper().getVersion();
+        if (!hasDependency(project, "io.fabric8.django", "camel-connector", version)) {
+            DependencyBuilder component = DependencyBuilder.create().setGroupId("io.fabric8.django")
+                    .setArtifactId("camel-connector").setVersion(version);
+            dependencyInstaller.install(project, component);
+        }
+
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
         catalog.setGroupId(dto.getGroupId());
@@ -154,7 +162,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         catalog.setSource(source);
 
         // add connector-maven-plugin if missing
-        String version = new VersionHelper().getVersion();
         MavenPluginFacet pluginFacet = project.getFacet(MavenPluginFacet.class);
         MavenPluginBuilder plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
@@ -183,7 +190,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         comp.setContents("class=" + packageName + "." + className);
 
         // create Java source code for component
-        // build json schema for component that only has the selectable options
 
         return Results.success("Created connector " + name);
     }
