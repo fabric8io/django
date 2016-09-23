@@ -66,63 +66,73 @@ public class ConnectorMojo extends AbstractJarMojo {
 
         File file = new File(classesDirectory, "camel-connector.json");
         if (file.exists()) {
-            try {
-                List<String> json = loadFile(file);
+            embedCamelComponentSchema(file);
 
-                String scheme = extractScheme(json);
-                String groupId = extractGroupId(json);
-                String artifactId = extractArtifactId(json);
-                String version = extractVersion(json); // version not in use
+            // create a Camel component with the possible options
 
-                // find the artifact on the classpath that has the Camel component this connector is using
-                // then we want to grab its json schema file to embed in this JAR so we have all files together
+        }
 
-                if (scheme != null && groupId != null && artifactId != null) {
-                    for (Artifact artifact : getProject().getDependencyArtifacts()) {
-                        if ("jar".equals(artifact.getType())) {
-                            if (groupId.equals(artifact.getGroupId()) && artifactId.equals(artifact.getArtifactId())) {
-                                // load the component file inside the file
-                                URL url = new URL("file:" + artifact.getFile());
-                                URLClassLoader child = new URLClassLoader(new URL[]{url}, this.getClass().getClassLoader());
+        return super.createArchive();
+    }
 
-                                InputStream is = child.getResourceAsStream("META-INF/services/org/apache/camel/component/" + scheme);
+    /**
+     * Finds and emabeds the Camel component JSon schema file
+     */
+    private void embedCamelComponentSchema(File file) throws MojoExecutionException {
+        try {
+            List<String> json = loadFile(file);
+
+            String scheme = extractScheme(json);
+            String groupId = extractGroupId(json);
+            String artifactId = extractArtifactId(json);
+            String version = extractVersion(json); // version not in use
+
+            // find the artifact on the classpath that has the Camel component this connector is using
+            // then we want to grab its json schema file to embed in this JAR so we have all files together
+
+            if (scheme != null && groupId != null && artifactId != null) {
+                for (Artifact artifact : getProject().getDependencyArtifacts()) {
+                    if ("jar".equals(artifact.getType())) {
+                        if (groupId.equals(artifact.getGroupId()) && artifactId.equals(artifact.getArtifactId())) {
+                            // load the component file inside the file
+                            URL url = new URL("file:" + artifact.getFile());
+                            URLClassLoader child = new URLClassLoader(new URL[]{url}, this.getClass().getClassLoader());
+
+                            InputStream is = child.getResourceAsStream("META-INF/services/org/apache/camel/component/" + scheme);
+                            if (is != null) {
+                                List<String> lines = loadFile(is);
+                                String fqn = extractClass(lines);
+                                is.close();
+
+                                // only keep package
+                                String pck = fqn.substring(0, fqn.lastIndexOf("."));
+                                String name = pck.replace(".", "/") + "/" + scheme + ".json";
+
+                                is = child.getResourceAsStream(name);
                                 if (is != null) {
-                                    List<String> lines = loadFile(is);
-                                    String fqn = extractClass(lines);
+                                    List<String> schema = loadFile(is);
                                     is.close();
 
-                                    // only keep package
-                                    String pck = fqn.substring(0, fqn.lastIndexOf("."));
-                                    String name = pck.replace(".", "/") + "/" + scheme + ".json";
-
-                                    is = child.getResourceAsStream(name);
-                                    if (is != null) {
-                                        List<String> schema = loadFile(is);
-                                        is.close();
-
-                                        // write schema to file
-                                        File out = new File(classesDirectory, "camel-component-schema.json");
-                                        FileOutputStream fos = new FileOutputStream(out, false);
-                                        for (String line : schema) {
-                                            fos.write(line.getBytes());
-                                            fos.write("\n".getBytes());
-                                        }
-                                        fos.close();
-
-                                        getLog().info("Embedded camel-component-schema.json file for Camel component " + scheme);
+                                    // write schema to file
+                                    File out = new File(classesDirectory, "camel-component-schema.json");
+                                    FileOutputStream fos = new FileOutputStream(out, false);
+                                    for (String line : schema) {
+                                        fos.write(line.getBytes());
+                                        fos.write("\n".getBytes());
                                     }
+                                    fos.close();
+
+                                    getLog().info("Embedded camel-component-schema.json file for Camel component " + scheme);
                                 }
                             }
                         }
                     }
                 }
-
-            } catch (Exception e) {
-                throw new MojoExecutionException("Cannot read file camel-connector.json", e);
             }
-        }
 
-        return super.createArchive();
+        } catch (Exception e) {
+            throw new MojoExecutionException("Cannot read file camel-connector.json", e);
+        }
     }
 
     private String extractClass(List<String> lines) {

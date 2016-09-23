@@ -123,16 +123,7 @@ public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implem
                         boolean isMultiValue = isMultiValue(camelCatalog, camelComponentName, key);
                         if (isMultiValue) {
                             String prefix = getPrefix(camelCatalog, camelComponentName, key);
-
                             // ensure the value has prefix for all its options
-                            // and make sure to adjust & to &amp; if in xml
-
-                            // since this is XML we need to escape & as &amp;
-                            // to be safe that & is not already &amp; we need to revert it first
-                            // TODO: no need to escape in json
-//                            value = StringHelper.replaceAll(value, "&amp;", "&");
-//                            value = StringHelper.replaceAll(value, "&", "&amp;");
-
                             // rebuild value (accordingly to above comment)
                             StringBuilder sb = new StringBuilder();
                             String[] parts = value.split("&amp;");
@@ -143,9 +134,6 @@ public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implem
                                 }
                                 sb.append(part);
                                 if (i < parts.length - 1) {
-                                    // since this is xml then use &amp; as separator
-                                    // TODO: no need to escape in json
-//                                    sb.append("&amp;");
                                     sb.append("&");
                                 }
                             }
@@ -163,13 +151,6 @@ public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implem
                             options.put(key, value);
                         }
                     }
-                } else if (input.isRequired() && input.hasDefaultValue()) {
-                    // TODO: should not be needed
-                    // if its required then we need to grab the value
-//                    String value = input.getValue().toString();
-//                    if (value != null) {
-//                        options.put(key, value);
-//                    }
                 }
             }
 
