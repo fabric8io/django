@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -77,31 +78,34 @@ public class ConnectorMojo extends AbstractJarMojo {
                 ObjectMapper mapper = new ObjectMapper();
                 Map dto = mapper.readValue(file, Map.class);
 
-                // find the endpoint options
-                List options = (List) dto.get("endpointOptions");
-
                 File schema = embedCamelComponentSchema(file);
                 if (schema != null) {
                     String json = loadText(new FileInputStream(schema));
 
                     List<Map<String, String>> rows = parseJsonSchema("component", json, false);
-                    String header = buildComponentSchemaHeader(rows, dto);
+                    String header = buildComponentHeaderSchema(rows, dto);
+                    getLog().debug(header);
 
-                    getLog().info(header);
+                    rows = parseJsonSchema("componentProperties", json, true);
+                    // we do not offer editing component properties (yet) so clear the rows
+                    rows.clear();
+                    String componentOptions = buildComponentOptionsSchema(rows, dto);
+                    getLog().debug(componentOptions);
 
-
-                    List<Map<String, String>> keep = new ArrayList<>();
                     rows = parseJsonSchema("properties", json, true);
-                    // only include the properties the end user is supposed to see
-                    for (Map<String, String> row : rows) {
-                        String key = row.get("name");
-                        if (options != null && options.contains(key)) {
-                            getLog().info("Keeping option " + key);
-                            keep.add(row);
-                        }
-                    }
-                }
+                    String endpointOptions = buildEndpointOptionsSchema(rows, dto);
+                    getLog().debug(endpointOptions);
 
+                    // generate the json file
+                    StringBuilder jsonSchema = new StringBuilder();
+                    jsonSchema.append("{\n");
+                    jsonSchema.append(header);
+                    jsonSchema.append(componentOptions);
+                    jsonSchema.append(endpointOptions);
+                    jsonSchema.append("}\n");
+
+                    getLog().info(jsonSchema.toString());
+                }
 
                 // build json schema for component that only has the selectable options
             } catch (Exception e) {
@@ -131,7 +135,75 @@ public class ConnectorMojo extends AbstractJarMojo {
         return null;
     }
 
-    private String buildComponentSchemaHeader(List<Map<String, String>> rows, Map dto) throws Exception {
+    private String buildComponentOptionsSchema(List<Map<String, String>> rows, Map dto) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(" \"componentProperties\": {\n");
+
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, String> row = rows.get(i);
+            String key = row.get("name");
+            row.remove("name");
+            String line = mapper.writeValueAsString(row);
+
+            sb.append("    \"" + key + "\": ");
+            sb.append(line);
+            if (i < rows.size() - 1) {
+                sb.append(",\n");
+            } else {
+                sb.append("\n");
+            }
+        }
+
+        sb.append("  },\n");
+        return sb.toString();
+    }
+
+    private String buildEndpointOptionsSchema(List<Map<String, String>> rows, Map dto) throws JsonProcessingException {
+        // find the endpoint options
+        List options = (List) dto.get("endpointOptions");
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(" \"properties\": {\n");
+
+        boolean first = true;
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, String> row = rows.get(i);
+            String key = row.get("name");
+            row.remove("name");
+
+            // TODO: if no options should we include all by default instead?
+            if (options == null || !options.contains(key)) {
+                continue;
+            }
+
+            // a connector only supports configuring using uri parameters so no context-path support
+            row.put("kind", "parameter");
+
+            // we should build the json as one-line which is how Camel does it today
+            // which makes its internal json parser support loading our generated schema file
+            String line = mapper.writeValueAsString(row);
+
+            if (!first) {
+                sb.append(",\n");
+            }
+            sb.append("    \"" + key + "\": ");
+            sb.append(line);
+
+            first = false;
+        }
+        if (!first) {
+            sb.append("\n");
+        }
+
+        sb.append("  }\n");
+        return sb.toString();
+    }
+
+    private String buildComponentHeaderSchema(List<Map<String, String>> rows, Map dto) throws Exception {
         String baseScheme = (String) dto.get("scheme");
         String source = (String) dto.get("source");
         String title = (String) dto.get("name");
