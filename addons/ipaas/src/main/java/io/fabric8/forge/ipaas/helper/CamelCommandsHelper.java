@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -348,4 +349,64 @@ public class CamelCommandsHelper {
         }
         return null;
     }
+
+    public static String asJavaClassName(String name) {
+        name = dashToCamelCase(name);
+        return Strings.capitalize(name);
+    }
+
+    public static String asSchemeName(String name) {
+        name = camelCaseToDash(name);
+        // skip first dash
+        if (name.startsWith("-")) {
+            name = name.substring(1);
+        }
+        // skip last dash
+        if (name.endsWith("-")) {
+            name = name.substring(0, name.length() - 1);
+        }
+        // lower case all
+        name = name.toLowerCase(Locale.US);
+        return name;
+    }
+
+    private static String dashToCamelCase(String value) {
+        StringBuilder sb = new StringBuilder(value.length());
+        boolean upper = false;
+
+        for (char c : value.toCharArray()) {
+            if (c == '-') {
+                upper = true;
+                continue;
+            }
+            if (upper) {
+                sb.append(Character.toUpperCase(c));
+            } else {
+                sb.append(c);
+            }
+            upper = false;
+        }
+        return sb.toString();
+    }
+
+    public static String camelCaseToDash(String value) {
+        StringBuilder sb = new StringBuilder(value.length());
+        boolean dash = false;
+
+        for (char c : value.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                dash = true;
+            }
+            if (dash) {
+                sb.append('-');
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+            dash = false;
+        }
+        return sb.toString();
+    }
+
+
 }

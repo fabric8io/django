@@ -28,7 +28,10 @@ import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
+import org.jboss.forge.addon.maven.projects.MavenFacet;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
+import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
+import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
@@ -39,12 +42,16 @@ import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 import static io.fabric8.forge.addon.utils.CamelProjectHelper.hasDependency;
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.createComponentDto;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentConsumerOnly;
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProducerOnly;
+import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
+import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
 
 @FacetConstraint({ResourcesFacet.class})
 public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
@@ -101,6 +108,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         String name = (String) context.getUIContext().getAttributeMap().get("name");
+        String description = (String) context.getUIContext().getAttributeMap().get("description");
         String type = (String) context.getUIContext().getAttributeMap().get("type");
         String labels = (String) context.getUIContext().getAttributeMap().get("labels");
         String source = (String) context.getUIContext().getAttributeMap().get("source");
@@ -136,12 +144,36 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
             dependencyInstaller.install(project, component);
         }
 
+        // install camel-connector as dependency
+        String version = new VersionHelper().getVersion();
+        if (!hasDependency(project, "io.fabric8.django", "camel-connector", version)) {
+            DependencyBuilder component = DependencyBuilder.create().setGroupId("io.fabric8.django")
+                    .setArtifactId("camel-connector").setVersion(version);
+            dependencyInstaller.install(project, component);
+        }
+
+        // ensure scheme is valid
+        String schemeName = asSchemeName(name);
+
+        // create Camel component file
+        String className = asJavaClassName(name) + "Component";
+        String packageName = getBasePackageName(project);
+        String javaType = packageName + "." + className;
+        FileResource<?> comp = getCamelComponentFile(project, schemeName);
+        comp.createNewFile();
+        comp.setContents("class=" + javaType);
+
+        // create Java source code for component
+        createJavaSourceForComponent(project, packageName, className);
+
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
         catalog.setGroupId(dto.getGroupId());
         catalog.setArtifactId(dto.getArtifactId());
         catalog.setVersion(dto.getVersion());
+        catalog.setJavaType(javaType);
         catalog.setName(name);
+        catalog.setDescription(description);
         catalog.setType(type);
         if (labels != null) {
             catalog.setLabels(labels.split(","));
@@ -149,7 +181,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         catalog.setSource(source);
 
         // add connector-maven-plugin if missing
-        String version = new VersionHelper().getVersion();
         MavenPluginFacet pluginFacet = project.getFacet(MavenPluginFacet.class);
         MavenPluginBuilder plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
@@ -169,7 +200,49 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
+
         return Results.success("Created connector " + name);
+    }
+
+    private void createJavaSourceForComponent(Project project, String packageName, String className) {
+        JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
+        String fqn = packageName + "." + className;
+
+        JavaResource existing = facet.getJavaResource(fqn);
+        if (existing != null && existing.exists()) {
+            // override existing
+            existing.delete();
+        }
+
+        // need to parse to be able to extends another class
+        final JavaClassSource javaClass = Roaster.create(JavaClassSource.class);
+        javaClass.setName(className);
+        javaClass.setPackage(packageName);
+        javaClass.setSuperType("DjangoComponent");
+        javaClass.addImport("io.fabric8.django.component.connector.DjangoComponent");
+
+        // add public no-arg constructor
+        javaClass.addMethod().setPublic().setConstructor(true).setBody("");
+
+        facet.saveJavaSource(javaClass);
+    }
+
+    protected FileResource getCamelComponentFile(Project project, String scheme) {
+        if (project != null && project.hasFacet(ResourcesFacet.class)) {
+            ResourcesFacet facet = project.getFacet(ResourcesFacet.class);
+            return facet.getResource("META-INF/services/org/apache/camel/component/" + scheme);
+        } else {
+            return null;
+        }
+    }
+
+    protected String getBasePackageName(Project project) {
+        if (project != null && project.hasFacet(JavaSourceFacet.class)) {
+            JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
+            String base = java.getBasePackage();
+            return base;
+        }
+        return null;
     }
 
 }

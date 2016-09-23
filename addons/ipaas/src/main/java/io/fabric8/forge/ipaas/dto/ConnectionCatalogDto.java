@@ -26,8 +26,10 @@ public class ConnectionCatalogDto {
     private String groupId;
     private String artifactId;
     private String version;
+    private String javaType;
 
     private String name;
+    private String description;
     private String type;
     private String[] labels;
     private String source;
@@ -67,12 +69,28 @@ public class ConnectionCatalogDto {
         this.version = version;
     }
 
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getType() {
