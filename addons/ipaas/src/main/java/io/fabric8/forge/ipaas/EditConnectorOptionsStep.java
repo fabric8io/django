@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
+import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.projects.ProjectFactory;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -36,24 +37,33 @@ import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.getPrefix;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isDefaultValue;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isMultiValue;
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isNonePlaceholderEnumValue;
 
 public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     private final String connectorName;
+    private final String camelComponentName;
     private final String group;
     private final List<InputComponent> allInputs;
     private final List<InputComponent> inputs;
     private final boolean last;
     private final int index;
     private final int total;
+    private final CamelCatalog camelCatalog;
 
     public EditConnectorOptionsStep(ProjectFactory projectFactory,
-                                    String connectorName, String group,
+                                    CamelCatalog camelCatalog,
+                                    String connectorName, String camelComponentName, String group,
                                     List<InputComponent> allInputs,
                                     List<InputComponent> inputs,
                                     boolean last, int index, int total) {
         this.projectFactory = projectFactory;
+        this.camelCatalog = camelCatalog;
         this.connectorName = connectorName;
+        this.camelComponentName = camelComponentName;
         this.group = group;
         this.allInputs = allInputs;
         this.inputs = inputs;
@@ -101,27 +111,75 @@ public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implem
     public Result execute(UIExecutionContext context) throws Exception {
         // only execute if we are last
         if (last) {
-            Map<String, String> currentValues = new LinkedHashMap<>();
-
-            // pickup the chosen values
+            // collect all the options that was set
+            Map<String, String> options = new LinkedHashMap<>();
             for (InputComponent input : allInputs) {
                 String key = input.getName();
                 // only use the value if a value was set (and the value is not the same as the default value)
                 if (input.hasValue()) {
                     String value = input.getValue().toString();
                     if (value != null) {
-                        currentValues.put(key, value);
+                        // special for multivalued options
+                        boolean isMultiValue = isMultiValue(camelCatalog, camelComponentName, key);
+                        if (isMultiValue) {
+                            String prefix = getPrefix(camelCatalog, camelComponentName, key);
+
+                            // ensure the value has prefix for all its options
+                            // and make sure to adjust & to &amp; if in xml
+
+                            // since this is XML we need to escape & as &amp;
+                            // to be safe that & is not already &amp; we need to revert it first
+                            // TODO: no need to escape in json
+//                            value = StringHelper.replaceAll(value, "&amp;", "&");
+//                            value = StringHelper.replaceAll(value, "&", "&amp;");
+
+                            // rebuild value (accordingly to above comment)
+                            StringBuilder sb = new StringBuilder();
+                            String[] parts = value.split("&amp;");
+                            for (int i = 0; i < parts.length; i++) {
+                                String part = parts[i];
+                                if (!part.startsWith(prefix)) {
+                                    part = prefix + part;
+                                }
+                                sb.append(part);
+                                if (i < parts.length - 1) {
+                                    // since this is xml then use &amp; as separator
+                                    // TODO: no need to escape in json
+//                                    sb.append("&amp;");
+                                    sb.append("&");
+                                }
+                            }
+                            value = sb.toString();
+                        }
+
+                        boolean matchDefault = isDefaultValue(camelCatalog, camelComponentName, key, value);
+                        if ("none".equals(value)) {
+                            // special for enum that may have a none as dummy placeholder which we should not add
+                            boolean nonePlaceholder = isNonePlaceholderEnumValue(camelCatalog, camelComponentName, key);
+                            if (!matchDefault && !nonePlaceholder) {
+                                options.put(key, value);
+                            }
+                        } else if (!matchDefault) {
+                            options.put(key, value);
+                        }
                     }
+                } else if (input.isRequired() && input.hasDefaultValue()) {
+                    // TODO: should not be needed
+                    // if its required then we need to grab the value
+//                    String value = input.getValue().toString();
+//                    if (value != null) {
+//                        options.put(key, value);
+//                    }
                 }
             }
 
             // load the dto
             ConnectionCatalogDto dto = loadCamelConnectionDto(getSelectedProject(context));
             if (dto != null) {
-                if (currentValues.isEmpty()) {
+                if (options.isEmpty()) {
                     dto.setEndpointValues(null);
                 } else {
-                    dto.setEndpointValues(currentValues);
+                    dto.setEndpointValues(options);
                 }
             }
 
@@ -132,7 +190,7 @@ public class EditConnectorOptionsStep extends AbstractIPaaSProjectCommand implem
             FileResource<?> fileResource = getCamelConnectorFile(context);
             fileResource.setContents(json);
 
-            Results.success("Updated default values on connector " + dto.getName());
+            Results.success("Updated default values on Connector: " + dto.getName());
         }
 
         return null;
