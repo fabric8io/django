@@ -30,6 +30,7 @@ import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
+import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
@@ -40,6 +41,8 @@ import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 import static io.fabric8.forge.addon.utils.CamelProjectHelper.hasDependency;
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
@@ -190,8 +193,32 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         comp.setContents("class=" + packageName + "." + className);
 
         // create Java source code for component
+        createJavaSourceForComponent(project, packageName, className);
 
         return Results.success("Created connector " + name);
+    }
+
+    private void createJavaSourceForComponent(Project project, String packageName, String className) {
+        JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
+        String fqn = packageName + "." + className;
+
+        JavaResource existing = facet.getJavaResource(fqn);
+        if (existing != null && existing.exists()) {
+            // override existing
+            existing.delete();
+        }
+
+        // need to parse to be able to extends another class
+        final JavaClassSource javaClass = Roaster.create(JavaClassSource.class);
+        javaClass.setName(className);
+        javaClass.setPackage(packageName);
+        javaClass.setSuperType("DjangoComponent");
+        javaClass.addImport("io.fabric8.django.component.connector.DjangoComponent");
+
+        // add public no-arg constructor
+        javaClass.addMethod().setPublic().setConstructor(true).setBody("");
+
+        facet.saveJavaSource(javaClass);
     }
 
     protected FileResource getCamelComponentFile(Project project, String scheme) {
