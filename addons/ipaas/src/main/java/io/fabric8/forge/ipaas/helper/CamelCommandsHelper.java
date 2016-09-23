@@ -357,8 +357,6 @@ public class CamelCommandsHelper {
 
     public static String asSchemeName(String name) {
         name = camelCaseToDash(name);
-        // lower case all
-        name = name.toLowerCase(Locale.US);
         // skip first dash
         if (name.startsWith("-")) {
             name = name.substring(1);
@@ -367,6 +365,8 @@ public class CamelCommandsHelper {
         if (name.endsWith("-")) {
             name = name.substring(0, name.length() - 1);
         }
+        // lower case all
+        name = name.toLowerCase(Locale.US);
         return name;
     }
 

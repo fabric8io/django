@@ -16,6 +16,7 @@
 package io.fabric8;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -25,7 +26,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -33,6 +36,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.plugins.jar.AbstractJarMojo;
+
+import static io.fabric8.FileHelper.loadText;
+import static io.fabric8.JSonSchemaHelper.parseJsonSchema;
 
 @Mojo(name = "jar", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true, threadSafe = true,
         requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -66,18 +72,103 @@ public class ConnectorMojo extends AbstractJarMojo {
 
         File file = new File(classesDirectory, "camel-connector.json");
         if (file.exists()) {
-            embedCamelComponentSchema(file);
+            try {
 
-            // build json schema for component that only has the selectable options
+                ObjectMapper mapper = new ObjectMapper();
+                Map dto = mapper.readValue(file, Map.class);
+
+                // find the endpoint options
+                List options = (List) dto.get("endpointOptions");
+
+                File schema = embedCamelComponentSchema(file);
+                if (schema != null) {
+                    String json = loadText(new FileInputStream(schema));
+
+                    List<Map<String, String>> rows = parseJsonSchema("component", json, false);
+                    String header = buildComponentSchemaHeader(rows, dto);
+
+                    getLog().info(header);
+
+
+                    List<Map<String, String>> keep = new ArrayList<>();
+                    rows = parseJsonSchema("properties", json, true);
+                    // only include the properties the end user is supposed to see
+                    for (Map<String, String> row : rows) {
+                        String key = row.get("name");
+                        if (options != null && options.contains(key)) {
+                            getLog().info("Keeping option " + key);
+                            keep.add(row);
+                        }
+                    }
+                }
+
+
+                // build json schema for component that only has the selectable options
+            } catch (Exception e) {
+                throw new MojoExecutionException("Darn", e);
+            }
         }
 
         return super.createArchive();
     }
 
+    private String extractJavaType(String scheme) throws Exception {
+        File file = new File(classesDirectory, "META-INF/services/org/apache/camel/component/" + scheme);
+        if (file.exists()) {
+            List<String> lines = loadFile(file);
+            String fqn = extractClass(lines);
+            return fqn;
+        }
+        return null;
+    }
+
+    private String buildComponentSchemaHeader(List<Map<String, String>> rows, Map dto) throws Exception {
+        String source = (String) dto.get("source");
+        String title = (String) dto.get("name");
+        String scheme = camelCaseToDash(title);
+        String description = (String) dto.get("description");
+        // dto has labels (but as single string)
+        String label = "foo,bar";
+        String async = "true"; // TODO: take from existing
+        String producerOnly = "To".equals(source) ? "true" : null;
+        String consumerOnly = "From".equals(source) ? "true" : null;
+        String lenientProperties = "true"; // TODO: take from existing
+        String javaType = extractJavaType(scheme);
+        String groupId = getProject().getGroupId();
+        String artifactId = getProject().getArtifactId();
+        String version = getProject().getVersion();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(" \"component\": {\n");
+        sb.append("    \"kind\": \"component\",\n");
+        sb.append("    \"scheme\": \"" + scheme + "\",\n");
+        sb.append("    \"syntax\": \"" + scheme + "\",\n");
+        sb.append("    \"title\": \"" + title + "\",\n");
+        sb.append("    \"description\": \"" + description + "\",\n");
+        sb.append("    \"label\": \"" + label + "\",\n");
+        sb.append("    \"deprecated\": \"false\",\n");
+        sb.append("    \"async\": \"" + async + "\",\n");
+        if (producerOnly != null) {
+            sb.append("    \"producerOnly\": \"" + producerOnly + "\",\n");
+        } else if (consumerOnly != null) {
+            sb.append("    \"consumerOnly\": \"" + consumerOnly + "\",\n");
+        }
+        if (lenientProperties != null) {
+            sb.append("    \"lenientProperties\": \"" + lenientProperties + "\",\n");
+        }
+        sb.append("    \"javaType\": \"" + javaType + "\",\n");
+        sb.append("    \"groupId\": \"" + groupId + "\",\n");
+        sb.append("    \"artifactId\": \"" + artifactId + "\",\n");
+        sb.append("    \"version\": \"" + version + "\"\n");
+        sb.append("  },\n");
+
+        return sb.toString();
+    }
+
     /**
      * Finds and embeds the Camel component JSon schema file
      */
-    private void embedCamelComponentSchema(File file) throws MojoExecutionException {
+    private File embedCamelComponentSchema(File file) throws MojoExecutionException {
         try {
             List<String> json = loadFile(file);
 
@@ -122,6 +213,8 @@ public class ConnectorMojo extends AbstractJarMojo {
                                     fos.close();
 
                                     getLog().info("Embedded camel-component-schema.json file for Camel component " + scheme);
+
+                                    return out;
                                 }
                             }
                         }
@@ -132,6 +225,8 @@ public class ConnectorMojo extends AbstractJarMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Cannot read file camel-connector.json", e);
         }
+
+        return null;
     }
 
     private String extractClass(List<String> lines) {
@@ -219,4 +314,30 @@ public class ConnectorMojo extends AbstractJarMojo {
 
         return lines;
     }
+
+    public static String camelCaseToDash(String value) {
+        StringBuilder sb = new StringBuilder(value.length());
+        boolean dash = false;
+
+        for (char c : value.toCharArray()) {
+            // skip dash in start
+            if (sb.length() > 0 & Character.isUpperCase(c)) {
+                dash = true;
+            }
+            if (dash) {
+                sb.append('-');
+                sb.append(Character.toLowerCase(c));
+            } else {
+                // lower case first
+                if (sb.length() == 0) {
+                    sb.append(Character.toLowerCase(c));
+                } else {
+                    sb.append(c);
+                }
+            }
+            dash = false;
+        }
+        return sb.toString();
+    }
+
 }

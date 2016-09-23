@@ -28,6 +28,7 @@ import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
+import org.jboss.forge.addon.maven.projects.MavenFacet;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
@@ -184,9 +185,11 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
+        // ensure scheme is valid
+        String schemeName = asSchemeName(name);
+
         // create Camel component file
         String className = asJavaClassName(name) + "Component";
-        String schemeName = asSchemeName(name);
         String packageName = getBasePackageName(project);
         FileResource<?> comp = getCamelComponentFile(project, schemeName);
         comp.createNewFile();
