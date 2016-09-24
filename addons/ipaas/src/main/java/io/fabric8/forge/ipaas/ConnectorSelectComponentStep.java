@@ -164,7 +164,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         comp.setContents("class=" + javaType);
 
         // create Java source code for component
-        createJavaSourceForComponent(project, packageName, className);
+        createJavaSourceForComponent(project, schemeName, packageName, className);
 
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
         catalog.setScheme(scheme);
@@ -200,11 +200,10 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         fileResource.createNewFile();
         fileResource.setContents(json);
 
-
         return Results.success("Created connector " + name);
     }
 
-    private void createJavaSourceForComponent(Project project, String packageName, String className) {
+    private void createJavaSourceForComponent(Project project, String schemeName, String packageName, String className) {
         JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
         String fqn = packageName + "." + className;
 
@@ -222,7 +221,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         javaClass.addImport("io.fabric8.django.component.connector.DjangoComponent");
 
         // add public no-arg constructor
-        javaClass.addMethod().setPublic().setConstructor(true).setBody("");
+        javaClass.addMethod().setPublic().setConstructor(true).setBody("super(\"" + schemeName + "\", \"" + fqn + "\");");
 
         facet.saveJavaSource(javaClass);
     }

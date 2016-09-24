@@ -149,6 +149,7 @@
     <module>components</module>
     <module>connector-maven-plugin</module>
     <module>addons</module>
+    <module>examples</module>
   </modules>
 
   <build>

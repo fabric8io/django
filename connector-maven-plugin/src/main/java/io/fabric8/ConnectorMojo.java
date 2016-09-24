@@ -125,7 +125,7 @@ public class ConnectorMojo extends AbstractJarMojo {
 
                 // build json schema for component that only has the selectable options
             } catch (Exception e) {
-                throw new MojoExecutionException("Darn", e);
+                throw new MojoExecutionException("Error in connector-maven-plugin", e);
             }
         }
 
