@@ -15,19 +15,83 @@
  */
 package io.fabric8.django.component.connector;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.camel.Endpoint;
+import org.apache.camel.catalog.CamelCatalog;
+import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.impl.DefaultComponent;
+import org.apache.camel.util.IOHelper;
 
 public abstract class DjangoComponent extends DefaultComponent {
 
-    public DjangoComponent() {
+    private final CamelCatalog catalog = new DefaultCamelCatalog(false);
+
+    public DjangoComponent(String componentName, String className) {
+        catalog.addComponent(componentName, className);
     }
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        // TODO: implement me, with those options and merge with from camel-connector.json
+        InputStream is = getCamelContext().getClassResolver().loadResourceAsStream("camel-connector.json");
+        if (is == null) {
+            throw new IllegalArgumentException("Cannot load camel-connector.json in the classpath");
+        }
+
+        List<String> lines = loadFile(is);
+        IOHelper.close(is);
+
+        String scheme = extractScheme(lines);
+
+        Map<String, String> options = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            String key = entry.getKey();
+            String value = null;
+            if (entry.getValue() != null) {
+                value = entry.getValue().toString();
+            }
+            options.put(key, value);
+        }
+        parameters.clear();
+
+        String delegateUri = catalog.asEndpointUri(scheme, options, false);
+        Endpoint delegate = getCamelContext().getEndpoint(delegateUri);
+
+        return new DjangoEndpoint(uri, this, delegate);
+    }
+
+    private List<String> loadFile(InputStream fis) throws Exception {
+        List<String> lines = new ArrayList<>();
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(fis));
+
+        String line;
+        do {
+            line = reader.readLine();
+            if (line != null) {
+                lines.add(line);
+            }
+        } while (line != null);
+        reader.close();
+
+        return lines;
+    }
+
+    private String extractScheme(List<String> json) {
+        for (String line : json) {
+            line = line.trim();
+            if (line.startsWith("\"scheme\":")) {
+                String answer = line.substring(10);
+                return answer.substring(0, answer.length() - 2);
+            }
+        }
         return null;
     }
+
 }
+
