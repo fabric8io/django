@@ -7,7 +7,6 @@
     "javaType":"org.bar.connector.BarComponent",
     "name":"Bar",
     "description":"Something magic happens in the bar",
-    "type":"business",
     "labels":[
         "foo",
         "bar"
