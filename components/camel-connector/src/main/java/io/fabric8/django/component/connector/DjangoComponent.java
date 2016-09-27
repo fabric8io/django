@@ -18,7 +18,9 @@ package io.fabric8.django.component.connector;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,21 +35,40 @@ public abstract class DjangoComponent extends DefaultComponent {
 
     private final CamelCatalog catalog = new DefaultCamelCatalog(false);
 
+    private final String componentName;
+    private final String className;
+
     public DjangoComponent(String componentName, String className) {
+        this.componentName = componentName;
+        this.className = className;
+
+        // add to catalog
         catalog.addComponent(componentName, className);
     }
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        InputStream is = getCamelContext().getClassResolver().loadResourceAsStream("camel-connector.json");
-        if (is == null) {
-            throw new IllegalArgumentException("Cannot load camel-connector.json in the classpath");
+        String scheme = null;
+
+        Enumeration<URL> urls = getClass().getClassLoader().getResources("camel-connector.json");
+        while (urls.hasMoreElements()) {
+            URL url = urls.nextElement();
+            InputStream is = url.openStream();
+            if (is != null) {
+                List<String> lines = loadFile(is);
+                IOHelper.close(is);
+
+                String javaType = extractJavaType(lines);
+                if (className.equals(javaType)) {
+                    scheme = extractScheme(lines);
+                    break;
+                }
+            }
         }
 
-        List<String> lines = loadFile(is);
-        IOHelper.close(is);
-
-        String scheme = extractScheme(lines);
+        if (scheme == null) {
+            throw new IllegalArgumentException("Cannot find camel-connector.json in classpath for connector with uri: " + uri);
+        }
 
         Map<String, String> options = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : parameters.entrySet()) {
@@ -59,6 +80,15 @@ public abstract class DjangoComponent extends DefaultComponent {
             options.put(key, value);
         }
         parameters.clear();
+
+        // add extra options from remaining (context-path)
+        if (remaining != null) {
+            String targetUri = scheme + ":" + remaining;
+            Map<String, String> extra = catalog.endpointProperties(targetUri);
+            if (extra != null && !extra.isEmpty()) {
+                options.putAll(extra);
+            }
+        }
 
         String delegateUri = catalog.asEndpointUri(scheme, options, false);
         Endpoint delegate = getCamelContext().getEndpoint(delegateUri);
@@ -80,6 +110,17 @@ public abstract class DjangoComponent extends DefaultComponent {
         reader.close();
 
         return lines;
+    }
+
+    private String extractJavaType(List<String> json) {
+        for (String line : json) {
+            line = line.trim();
+            if (line.startsWith("\"javaType\":")) {
+                String answer = line.substring(12);
+                return answer.substring(0, answer.length() - 2);
+            }
+        }
+        return null;
     }
 
     private String extractScheme(List<String> json) {

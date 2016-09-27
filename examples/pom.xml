@@ -34,7 +34,7 @@
   <modules>
     <module>foo-connector</module>
     <module>bar-connector</module>
-    <module>foo-example</module>
+    <module>foobar-example</module>
   </modules>
 
 </project>
