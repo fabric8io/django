@@ -21,7 +21,7 @@ public class FooRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("foo:hello?delay=2000")
+        from("foo:hello?period=2000")
             .to("log:foo");
     }
 }
