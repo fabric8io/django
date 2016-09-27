@@ -10,8 +10,8 @@
     <version>2.3-SNAPSHOT</version>
   </parent>
 
-  <name>Fabric8 :: Django :: Examples :: foo-example</name>
-  <artifactId>foo-example</artifactId>
+  <name>Fabric8 :: Django :: Examples :: foobar-example</name>
+  <artifactId>foobar-example</artifactId>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -26,6 +26,11 @@
         <artifactId>foo-connector</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>io.fabric8.django</groupId>
+        <artifactId>bar-connector</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -33,6 +38,10 @@
     <dependency>
       <groupId>io.fabric8.django</groupId>
       <artifactId>foo-connector</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.fabric8.django</groupId>
+      <artifactId>bar-connector</artifactId>
     </dependency>
 
     <dependency>

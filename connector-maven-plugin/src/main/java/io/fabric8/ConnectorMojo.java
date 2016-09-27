@@ -179,6 +179,7 @@ public class ConnectorMojo extends AbstractJarMojo {
     private String buildEndpointOptionsSchema(List<Map<String, String>> rows, Map dto) throws JsonProcessingException {
         // find the endpoint options
         List options = (List) dto.get("endpointOptions");
+        Map values = (Map) dto.get("endpointValues");
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -194,6 +195,14 @@ public class ConnectorMojo extends AbstractJarMojo {
             // TODO: if no options should we include all by default instead?
             if (options == null || !options.contains(key)) {
                 continue;
+            }
+
+            // do we have a new default value for this row?
+            if (values != null && values.containsKey(key)) {
+                String newDefaultValue = (String) values.get(key);
+                if (newDefaultValue != null) {
+                    row.put("defaultValue", newDefaultValue);
+                }
             }
 
             // we should build the json as one-line which is how Camel does it today

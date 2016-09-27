@@ -1,0 +1,26 @@
+
+{
+    "scheme":"log",
+    "groupId":"org.apache.camel",
+    "artifactId":"camel-core",
+    "version":"2.17.3",
+    "javaType":"org.bar.connector.BarComponent",
+    "name":"Bar",
+    "description":"Something magic happens in the bar",
+    "type":"business",
+    "labels":[
+        "foo",
+        "bar"
+    ],
+    "source":"To",
+    "endpointOptions":[
+        "loggerName",
+        "level",
+        "showAll"
+    ],
+    "endpointValues":{
+        "multiline":"true",
+        "showAll":"true",
+        "style":"Tab"
+    }
+}
