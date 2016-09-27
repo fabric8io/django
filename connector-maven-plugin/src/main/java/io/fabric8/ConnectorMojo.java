@@ -41,7 +41,7 @@ import org.apache.maven.plugins.jar.AbstractJarMojo;
 import static io.fabric8.FileHelper.loadText;
 import static io.fabric8.JSonSchemaHelper.parseJsonSchema;
 
-@Mojo(name = "jar", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true, threadSafe = true,
+@Mojo(name = "jar", defaultPhase = LifecyclePhase.PREPARE_PACKAGE, requiresProject = true, threadSafe = true,
         requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class ConnectorMojo extends AbstractJarMojo {
 
