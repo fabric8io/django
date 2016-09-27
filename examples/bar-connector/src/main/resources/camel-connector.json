@@ -19,6 +19,7 @@
         "showAll"
     ],
     "endpointValues":{
+        "multiline":"true",
         "showAll":"true",
         "style":"Tab"
     }
