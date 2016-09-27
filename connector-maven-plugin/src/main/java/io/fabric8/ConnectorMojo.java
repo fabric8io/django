@@ -196,9 +196,6 @@ public class ConnectorMojo extends AbstractJarMojo {
                 continue;
             }
 
-            // a connector only supports configuring using uri parameters so no context-path support
-            row.put("kind", "parameter");
-
             // we should build the json as one-line which is how Camel does it today
             // which makes its internal json parser support loading our generated schema file
             String line = mapper.writeValueAsString(row);
@@ -224,6 +221,9 @@ public class ConnectorMojo extends AbstractJarMojo {
         String source = (String) dto.get("source");
         String title = (String) dto.get("name");
         String scheme = camelCaseToDash(title);
+        String baseSyntax = getOption(rows, "syntax");
+        String syntax = baseSyntax.replaceFirst(baseScheme, scheme);
+
         String description = (String) dto.get("description");
         // dto has labels
         String label = null;
@@ -249,7 +249,7 @@ public class ConnectorMojo extends AbstractJarMojo {
         sb.append("    \"kind\": \"component\",\n");
         sb.append("    \"baseScheme\": \"" + baseScheme + "\",\n");
         sb.append("    \"scheme\": \"" + scheme + "\",\n");
-        sb.append("    \"syntax\": \"" + scheme + "\",\n");
+        sb.append("    \"syntax\": \"" + syntax + "\",\n");
         sb.append("    \"title\": \"" + title + "\",\n");
         if (description != null) {
             sb.append("    \"description\": \"" + description + "\",\n");
