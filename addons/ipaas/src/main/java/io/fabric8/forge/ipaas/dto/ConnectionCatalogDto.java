@@ -30,7 +30,6 @@ public class ConnectionCatalogDto {
 
     private String name;
     private String description;
-    private String type;
     private String[] labels;
     private String source;
     private Map<String, String> componentValues;
@@ -91,14 +90,6 @@ public class ConnectionCatalogDto {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String[] getLabels() {

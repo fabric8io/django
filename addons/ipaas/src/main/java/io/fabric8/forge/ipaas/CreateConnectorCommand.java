@@ -52,10 +52,6 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
     private UIInput<String> description;
 
     @Inject
-    @WithAttributes(label = "Type", description = "Type of connector")
-    private UIInput<String> type;
-
-    @Inject
     @WithAttributes(label = "Labels", description = "Labels of connector (separate by comma)")
     private UIInput<String> labels;
 
@@ -80,7 +76,7 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(name).add(description).add(type).add(labels).add(source);
+        builder.add(name).add(description).add(labels).add(source);
         source.setValueChoices(Arrays.asList(sources));
     }
 
@@ -93,7 +89,6 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
     public NavigationResult next(UINavigationContext context) throws Exception {
         context.getUIContext().getAttributeMap().put("name", name.getValue());
         context.getUIContext().getAttributeMap().put("description", description.getValue());
-        context.getUIContext().getAttributeMap().put("type", type.getValue());
         context.getUIContext().getAttributeMap().put("labels", labels.getValue());
         context.getUIContext().getAttributeMap().put("source", source.getValue());
 

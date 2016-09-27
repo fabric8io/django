@@ -7,7 +7,6 @@
     "javaType":"org.foo.connector.FooComponent",
     "name":"Foo",
     "description":"Some awesome foo stuff",
-    "type":"Demo",
     "labels":[
         "foo",
         "bar"

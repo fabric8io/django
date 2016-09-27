@@ -109,7 +109,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
     public Result execute(UIExecutionContext context) throws Exception {
         String name = (String) context.getUIContext().getAttributeMap().get("name");
         String description = (String) context.getUIContext().getAttributeMap().get("description");
-        String type = (String) context.getUIContext().getAttributeMap().get("type");
         String labels = (String) context.getUIContext().getAttributeMap().get("labels");
         String source = (String) context.getUIContext().getAttributeMap().get("source");
 
@@ -174,7 +173,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         catalog.setJavaType(javaType);
         catalog.setName(name);
         catalog.setDescription(description);
-        catalog.setType(type);
         if (labels != null) {
             catalog.setLabels(labels.split(","));
         }
