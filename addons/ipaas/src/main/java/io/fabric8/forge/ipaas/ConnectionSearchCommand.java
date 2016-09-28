@@ -37,16 +37,8 @@ import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 public class ConnectionSearchCommand extends AbstractIPaaSProjectCommand {
 
     @Inject
-    @WithAttributes(label = "Name", description = "Search by name")
-    private UIInput<String> name;
-
-    @Inject
-    @WithAttributes(label = "Type", description = "Search by type")
-    private UIInput<String> type;
-
-    @Inject
-    @WithAttributes(label = "Labels", description = "Search by labels")
-    private UIInput<String> labels;
+    @WithAttributes(label = "Filter", description = "Filter to use when searching")
+    private UIInput<String> filter;
 
     @Inject
     private ConnectionRepository repository;
@@ -73,12 +65,12 @@ public class ConnectionSearchCommand extends AbstractIPaaSProjectCommand {
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(name).add(type).add(labels);
+        builder.add(filter);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
-        List<ConnectionCatalogDto> list = repository.search(name.getValue(), type.getValue(), labels.getValue());
+        List<ConnectionCatalogDto> list = repository.search(filter.getValue());
         if (list.isEmpty()) {
             return Results.success();
         } else {

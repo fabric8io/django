@@ -21,7 +21,6 @@ import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 
 public interface ConnectionRepository {
 
-    List<ConnectionCatalogDto> search(String name, String type, String labels);
+    List<ConnectionCatalogDto> search(String filter);
 
-    void editLabels(String id, String labels);
 }

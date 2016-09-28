@@ -17,8 +17,11 @@ package io.fabric8.forge.ipaas;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.inject.Inject;
 
+import io.fabric8.forge.addon.utils.completer.PackageNameCompleter;
+import io.fabric8.forge.addon.utils.validator.PackageNameValidator;
 import io.fabric8.forge.ipaas.dto.ComponentDto;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.helper.VersionHelper;
@@ -37,11 +40,19 @@ import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.facets.HintsFacet;
+import org.jboss.forge.addon.ui.hints.InputType;
+import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
+import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.util.Categories;
+import org.jboss.forge.addon.ui.util.Metadata;
+import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 
@@ -53,12 +64,16 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProduc
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
 
-@FacetConstraint({ResourcesFacet.class})
-public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
+@FacetConstraint({ResourcesFacet.class, JavaSourceFacet.class, MavenPluginFacet.class, MavenFacet.class})
+public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     @Inject
     @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
     private UISelectOne<String> componentName;
+
+    @Inject
+    @WithAttributes(label = "Java Package", required = true, description = "Java package for creating source code")
+    private UIInput<String> targetPackage;
 
     @Inject
     private DependencyInstaller dependencyInstaller;
@@ -67,9 +82,14 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
     private CamelCatalog camelCatalog;
 
     @Override
-    public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(componentName);
+    public UICommandMetadata getMetadata(UIContext context) {
+        return Metadata.forCommand(ConnectorSelectComponentStep.class)
+                .name("iPaaS: Select Component").category(Categories.create(CATEGORY))
+                .description("Select Camel Component to use as Connector");
+    }
 
+    @Override
+    public void initializeUI(UIBuilder builder) throws Exception {
         // should we limit the components to be either consumer or producer only
         boolean consumerOnly = false;
         boolean producerOnly = false;
@@ -103,6 +123,15 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
         }
 
         componentName.setValueChoices(filtered);
+
+        Project project = getSelectedProject(builder.getUIContext());
+        if (project != null) {
+            targetPackage.setDefaultValue(getBasePackageName(project));
+        }
+        targetPackage.addValidator(new PackageNameValidator());
+        targetPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
+
+        builder.add(componentName).add(targetPackage);
     }
 
     @Override
@@ -156,21 +185,41 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
 
         // create Camel component file
         String className = asJavaClassName(name) + "Component";
-        String packageName = getBasePackageName(project);
+        String packageName = targetPackage.getValue();
         String javaType = packageName + "." + className;
         FileResource<?> comp = getCamelComponentFile(project, schemeName);
-        comp.createNewFile();
-        comp.setContents("class=" + javaType);
+        if (comp != null) {
+            comp.createNewFile();
+            comp.setContents("class=" + javaType);
+        }
 
         // create Java source code for component
         createJavaSourceForComponent(project, schemeName, packageName, className);
 
         ConnectionCatalogDto catalog = new ConnectionCatalogDto();
-        catalog.setScheme(scheme);
-        catalog.setGroupId(dto.getGroupId());
-        catalog.setArtifactId(dto.getArtifactId());
-        catalog.setVersion(dto.getVersion());
+
+        // the base Camel component which the connector is using
+        catalog.setBaseScheme(scheme);
+        catalog.setBaseGroupId(dto.getGroupId());
+        catalog.setBaseArtifactId(dto.getArtifactId());
+        catalog.setBaseVersion(dto.getVersion());
         catalog.setJavaType(javaType);
+
+        // the connector Maven GAV
+        catalog.setScheme(schemeName);
+        MavenFacet maven = project.getFacet(MavenFacet.class);
+        catalog.setGroupId(maven.getModel().getGroupId());
+        if (catalog.getGroupId() == null && maven.getModel().getParent() != null) {
+            // maybe its inherited
+            catalog.setGroupId(maven.getModel().getParent().getGroupId());
+        }
+        catalog.setArtifactId(maven.getModel().getArtifactId());
+        catalog.setVersion(maven.getModel().getVersion());
+        if (catalog.getVersion() == null && maven.getModel().getParent() != null) {
+            // maybe its inherited
+            catalog.setVersion(maven.getModel().getParent().getVersion());
+        }
+
         catalog.setName(name);
         catalog.setDescription(description);
         if (labels != null) {

@@ -55,7 +55,8 @@ public abstract class DjangoComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        String scheme = extractScheme(lines);
+        String scheme = extractBaseScheme(lines);
+
         Map<String, String> defaultOptions = extractEndpointDefaultValues(lines);
 
         // gather all options to use when building the delegate uri
@@ -237,11 +238,11 @@ public abstract class DjangoComponent extends DefaultComponent {
         return null;
     }
 
-    private String extractScheme(List<String> json) {
+    private String extractBaseScheme(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"scheme\":")) {
-                String answer = line.substring(10);
+            if (line.startsWith("\"baseScheme\":")) {
+                String answer = line.substring(14);
                 return answer.substring(0, answer.length() - 2);
             }
         }

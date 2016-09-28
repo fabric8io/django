@@ -1,15 +1,19 @@
 
 {
-    "scheme":"timer",
-    "groupId":"org.apache.camel",
-    "artifactId":"camel-core",
-    "version":"2.17.3",
-    "javaType":"org.foo.connector.FooComponent",
+    "baseScheme":"timer",
+    "baseGroupId":"org.apache.camel",
+    "baseArtifactId":"camel-core",
+    "baseVersion":"2.17.3",
     "name":"Foo",
-    "description":"Some awesome foo stuff",
+    "scheme":"foo",
+    "javaType":"org.foo.connector.FooComponent",
+    "groupId":"io.fabric8.django",
+    "artifactId":"foo-connector",
+    "version":"2.3-SNAPSHOT",
+    "description":"Something cool",
     "labels":[
         "foo",
-        "bar"
+        "timer"
     ],
     "source":"From",
     "endpointOptions":[
