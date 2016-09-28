@@ -30,15 +30,20 @@ import org.apache.camel.catalog.CamelCatalog;
 import org.apache.camel.catalog.DefaultCamelCatalog;
 import org.apache.camel.impl.DefaultComponent;
 import org.apache.camel.util.IOHelper;
-import org.apache.camel.util.ObjectHelper;
+import org.apache.camel.util.IntrospectionSupport;
 import org.apache.camel.util.StringHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DjangoComponent extends DefaultComponent {
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final CamelCatalog catalog = new DefaultCamelCatalog(false);
 
     private final String componentName;
     private final String className;
+    private List<String> lines;
 
     public DjangoComponent(String componentName, String className) {
         this.componentName = componentName;
@@ -50,49 +55,8 @@ public abstract class DjangoComponent extends DefaultComponent {
 
     @Override
     protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {
-        String scheme = null;
-        Map<String, String> defaultOptions = new LinkedHashMap<>();
-
-        Enumeration<URL> urls = getClass().getClassLoader().getResources("camel-connector.json");
-        while (urls.hasMoreElements()) {
-            URL url = urls.nextElement();
-            InputStream is = url.openStream();
-            if (is != null) {
-                List<String> lines = loadFile(is);
-                IOHelper.close(is);
-
-                String javaType = extractJavaType(lines);
-                if (className.equals(javaType)) {
-                    scheme = extractScheme(lines);
-
-                    // extract the default options
-                    boolean found = false;
-                    for (String line : lines) {
-                        line = line.trim();
-                        if (line.startsWith("\"endpointValues\":")) {
-                            found = true;
-                        } else if (line.startsWith("}")) {
-                            found = false;
-                        } else if (found) {
-                            // "showAll":"true",
-                            int pos = line.indexOf(':');
-                            String key = line.substring(0, pos);
-                            String value = line.substring(pos + 1);
-                            if (value.endsWith(",")) {
-                                value = value.substring(0, value.length() - 1);
-                            }
-                            key = StringHelper.removeLeadingAndEndingQuotes(key);
-                            value = StringHelper.removeLeadingAndEndingQuotes(value);
-                            defaultOptions.put(key, value);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (scheme == null) {
-            throw new IllegalArgumentException("Cannot find camel-connector.json in classpath for connector with uri: " + uri);
-        }
+        String scheme = extractScheme(lines);
+        Map<String, String> defaultOptions = extractEndpointDefaultValues(lines);
 
         // gather all options to use when building the delegate uri
         Map<String, String> options = new LinkedHashMap<>();
@@ -122,9 +86,128 @@ public abstract class DjangoComponent extends DefaultComponent {
         }
 
         String delegateUri = catalog.asEndpointUri(scheme, options, false);
+        log.debug("Connector resolved: {} -> {}", uri, delegateUri);
+
         Endpoint delegate = getCamelContext().getEndpoint(delegateUri);
 
         return new DjangoEndpoint(uri, this, delegate);
+    }
+
+    private List<String> findCamelConnectorJSonSchema() throws Exception {
+        Enumeration<URL> urls = getClass().getClassLoader().getResources("camel-connector.json");
+        while (urls.hasMoreElements()) {
+            URL url = urls.nextElement();
+            InputStream is = url.openStream();
+            if (is != null) {
+                List<String> lines = loadFile(is);
+                IOHelper.close(is);
+
+                String javaType = extractJavaType(lines);
+                log.trace("Found camel-connector.json in classpath with javaType: {}", javaType);
+
+                if (className.equals(javaType)) {
+                    return lines;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+        this.lines = findCamelConnectorJSonSchema();
+        if (lines == null) {
+            throw new IllegalArgumentException("Cannot find camel-connector.json in classpath for connector " + componentName);
+        }
+
+        // the connector may have default values for the component level also
+        // and if so we need to prepare these values and set on this component before we can start
+
+        Map<String, String> defaultOptions = extractComponentDefaultValues(lines);
+
+        if (!defaultOptions.isEmpty()) {
+            Map<String, Object> parameters = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : defaultOptions.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (value != null) {
+                    // also support {{ }} placeholders so resolve those first
+                    value = getCamelContext().resolvePropertyPlaceholders(value);
+                    log.debug("Using component option: {}={}", key, value);
+                    parameters.put(key, value);
+                }
+            }
+            IntrospectionSupport.setProperties(getCamelContext(), getCamelContext().getTypeConverter(), this, parameters);
+        }
+
+        log.debug("Starting connector: {}", componentName);
+
+        super.doStart();
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        log.debug("Stopping connector: {}", componentName);
+
+        super.doStop();
+    }
+
+    // --------------------------------------------------------------
+
+    private Map<String, String> extractComponentDefaultValues(List<String> lines) {
+        Map<String, String> answer = new LinkedHashMap<>();
+
+        // extract the default options
+        boolean found = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.startsWith("\"componentValues\":")) {
+                found = true;
+            } else if (line.startsWith("}")) {
+                found = false;
+            } else if (found) {
+                // "showAll":"true",
+                int pos = line.indexOf(':');
+                String key = line.substring(0, pos);
+                String value = line.substring(pos + 1);
+                if (value.endsWith(",")) {
+                    value = value.substring(0, value.length() - 1);
+                }
+                key = StringHelper.removeLeadingAndEndingQuotes(key);
+                value = StringHelper.removeLeadingAndEndingQuotes(value);
+                answer.put(key, value);
+            }
+        }
+
+        return answer;
+    }
+
+    private Map<String, String> extractEndpointDefaultValues(List<String> lines) {
+        Map<String, String> answer = new LinkedHashMap<>();
+
+        // extract the default options
+        boolean found = false;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.startsWith("\"endpointValues\":")) {
+                found = true;
+            } else if (line.startsWith("}")) {
+                found = false;
+            } else if (found) {
+                // "showAll":"true",
+                int pos = line.indexOf(':');
+                String key = line.substring(0, pos);
+                String value = line.substring(pos + 1);
+                if (value.endsWith(",")) {
+                    value = value.substring(0, value.length() - 1);
+                }
+                key = StringHelper.removeLeadingAndEndingQuotes(key);
+                value = StringHelper.removeLeadingAndEndingQuotes(value);
+                answer.put(key, value);
+            }
+        }
+
+        return answer;
     }
 
     private List<String> loadFile(InputStream fis) throws Exception {
