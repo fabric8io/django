@@ -101,14 +101,14 @@ public class EditConnectorOptionsCommand extends AbstractIPaaSProjectCommand imp
         if (dto == null) {
             return null;
         }
-        ComponentDto component = createComponentDto(camelCatalog, dto.getScheme());
+        ComponentDto component = createComponentDto(camelCatalog, dto.getBaseScheme());
         if (component == null) {
             return null;
         }
 
         boolean isConsumerOnly = "From".equals(dto.getSource());
         boolean isProducerOnly = "To".equals(dto.getSource());
-        String camelComponentName = dto.getScheme();
+        String camelComponentName = dto.getBaseScheme();
         String name = dto.getName();
 
         // what are the current chosen options

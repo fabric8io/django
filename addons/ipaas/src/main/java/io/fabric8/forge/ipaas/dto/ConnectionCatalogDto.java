@@ -22,19 +22,71 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ConnectionCatalogDto {
 
+    private String baseScheme;
+    private String baseGroupId;
+    private String baseArtifactId;
+    private String baseVersion;
+
+    private String name;
     private String scheme;
+    private String javaType;
     private String groupId;
     private String artifactId;
     private String version;
-    private String javaType;
-
-    private String name;
     private String description;
     private String[] labels;
     private String source;
     private Map<String, String> componentValues;
     private String[] endpointOptions;
     private Map<String, String> endpointValues;
+
+    public String getBaseScheme() {
+        return baseScheme;
+    }
+
+    public void setBaseScheme(String baseScheme) {
+        this.baseScheme = baseScheme;
+    }
+
+    public String getBaseGroupId() {
+        return baseGroupId;
+    }
+
+    public void setBaseGroupId(String baseGroupId) {
+        this.baseGroupId = baseGroupId;
+    }
+
+    public String getBaseArtifactId() {
+        return baseArtifactId;
+    }
+
+    public void setBaseArtifactId(String baseArtifactId) {
+        this.baseArtifactId = baseArtifactId;
+    }
+
+    public String getBaseVersion() {
+        return baseVersion;
+    }
+
+    public void setBaseVersion(String baseVersion) {
+        this.baseVersion = baseVersion;
+    }
+
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getScheme() {
         return scheme;
@@ -66,22 +118,6 @@ public class ConnectionCatalogDto {
 
     public void setVersion(String version) {
         this.version = version;
-    }
-
-    public String getJavaType() {
-        return javaType;
-    }
-
-    public void setJavaType(String javaType) {
-        this.javaType = javaType;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDescription() {
