@@ -15,28 +15,35 @@
  */
 package io.fabric8.forge.ipaas;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.inject.Inject;
 
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.repository.ConnectionRepository;
+import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
+import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.input.UISelectOne;
+import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
+import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.util.Categories;
+import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 
+import static io.fabric8.forge.addon.utils.CamelProjectHelper.hasDependency;
+
 @FacetConstraint({ResourcesFacet.class})
-public class ConnectorSearchStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
+public class ConnectorSelectStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     @Inject
     @WithAttributes(label = "Connector", required = true, description = "The connector to add")
-    private UISelectOne<String> connectors;
+    private UISelectOne<ConnectionCatalogDto> connectors;
 
     @Inject
     ConnectionRepository repository;
@@ -45,22 +52,36 @@ public class ConnectorSearchStep extends AbstractIPaaSProjectCommand implements 
     private DependencyInstaller dependencyInstaller;
 
     @Override
+    public UICommandMetadata getMetadata(UIContext context) {
+        return Metadata.forCommand(ConnectorSelectStep.class)
+                .name("iPaaS: Select Connector").category(Categories.create(CATEGORY))
+                .description("Select Connector to add");
+    }
+
+    @Override
     public void initializeUI(UIBuilder builder) throws Exception {
         String filter = (String) builder.getUIContext().getAttributeMap().get("filter");
 
-        List<String> values = new ArrayList<>();
-        List<ConnectionCatalogDto> dtos = repository.search(filter);
-        for (ConnectionCatalogDto dto : dtos) {
-            values.add(dto.getName());
-        }
-        connectors.setValueChoices(values);
+        connectors.setValueChoices(repository.search(filter));
+        connectors.setItemLabelConverter(ConnectionCatalogDto::getName);
 
         builder.add(connectors);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
-        return null;
+        ConnectionCatalogDto dto = connectors.getValue();
+
+        Project project = getSelectedProject(context);
+
+        // install connector as dependency
+        if (!hasDependency(project, dto.getGroupId(), dto.getArtifactId(), dto.getVersion())) {
+            DependencyBuilder component = DependencyBuilder.create().setGroupId(dto.getGroupId())
+                    .setArtifactId(dto.getArtifactId()).setVersion(dto.getVersion());
+            dependencyInstaller.install(project, component);
+        }
+
+        return Results.success("Added connector " + dto.getName());
     }
 
 }

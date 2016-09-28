@@ -43,7 +43,7 @@ public class DummyConnectionRepository implements ConnectionRepository {
     public List<ConnectionCatalogDto> search(String filter) {
         List<ConnectionCatalogDto> answer = new ArrayList<>();
 
-        if (filter != null) {
+        if (filter != null && !filter.isEmpty()) {
             filter = filter.toLowerCase(Locale.US);
 
             for (ConnectionCatalogDto dto : dtos.values()) {
@@ -70,11 +70,17 @@ public class DummyConnectionRepository implements ConnectionRepository {
     private void addHardcodedValues() {
         ConnectionCatalogDto foo = new ConnectionCatalogDto();
         foo.setName("Foo");
-        foo.setLabels(new String[]{"foo", "bar"});
+        foo.setLabels(new String[]{"foo", "timer"});
+        foo.setGroupId("io.fabric8.django");
+        foo.setArtifactId("foo-connector");
+        foo.setVersion("2.3-SNAPSHOT");
 
         ConnectionCatalogDto bar = new ConnectionCatalogDto();
         bar.setName("Bar");
-        bar.setLabels(new String[]{"foo", "bar"});
+        bar.setLabels(new String[]{"bar", "beer"});
+        bar.setGroupId("io.fabric8.django");
+        bar.setArtifactId("bar-connector");
+        bar.setVersion("2.3-SNAPSHOT");
 
         dtos.put("Foo", foo);
         dtos.put("Bar", bar);

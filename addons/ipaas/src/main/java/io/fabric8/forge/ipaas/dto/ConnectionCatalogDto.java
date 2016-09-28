@@ -167,4 +167,9 @@ public class ConnectionCatalogDto {
     public void setComponentValues(Map<String, String> componentValues) {
         this.componentValues = componentValues;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

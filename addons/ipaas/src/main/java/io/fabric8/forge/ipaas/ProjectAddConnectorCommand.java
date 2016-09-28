@@ -17,7 +17,6 @@ package io.fabric8.forge.ipaas;
 
 import javax.inject.Inject;
 
-import io.fabric8.forge.ipaas.repository.ConnectionRepository;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -67,6 +66,6 @@ public class ProjectAddConnectorCommand extends AbstractIPaaSProjectCommand impl
     public NavigationResult next(UINavigationContext context) throws Exception {
         context.getUIContext().getAttributeMap().put("filter", filter.getValue());
 
-        return Results.navigateTo(ConnectorSearchStep.class);
+        return Results.navigateTo(ConnectorSelectStep.class);
     }
 }
