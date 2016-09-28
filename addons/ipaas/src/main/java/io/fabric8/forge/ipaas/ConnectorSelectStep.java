@@ -64,6 +64,14 @@ public class ConnectorSelectStep extends AbstractIPaaSProjectCommand implements 
 
         connectors.setValueChoices(repository.search(filter));
         connectors.setItemLabelConverter(ConnectionCatalogDto::getName);
+        connectors.setValueConverter(s -> {
+            for (ConnectionCatalogDto dto : connectors.getValueChoices()) {
+                if (dto.getName().equals(s)) {
+                    return dto;
+                }
+            }
+            return null;
+        });
 
         builder.add(connectors);
     }
