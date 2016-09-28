@@ -17,14 +17,18 @@ package io.fabric8.forge.ipaas;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.inject.Inject;
 
+import io.fabric8.forge.addon.utils.completer.PackageNameCompleter;
+import io.fabric8.forge.addon.utils.validator.PackageNameValidator;
 import io.fabric8.forge.ipaas.dto.ComponentDto;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.helper.VersionHelper;
 import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
+import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.addon.maven.projects.MavenFacet;
@@ -38,6 +42,8 @@ import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.facets.HintsFacet;
+import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
@@ -58,6 +64,7 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProduc
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
 
+@FacetConstraint({ResourcesFacet.class, JavaSourceFacet.class, MavenPluginFacet.class, MavenFacet.class})
 public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     @Inject
@@ -65,7 +72,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
     private UISelectOne<String> componentName;
 
     @Inject
-    @WithAttributes(label = "Java Package", description = "Java package for creating source code")
+    @WithAttributes(label = "Java Package", required = true, description = "Java package for creating source code")
     private UIInput<String> targetPackage;
 
     @Inject
@@ -117,13 +124,12 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
 
         componentName.setValueChoices(filtered);
 
-//        Project project = getSelectedProject(builder.getUIContext());
-//        JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
-
-//        targetPackage.setCompleter(new PackageNameCompleter(facet));
-//        targetPackage.addValidator(new PackageNameValidator());
-//        targetPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
-//        targetPackage.setDefaultValue(getBasePackageName(project));
+        Project project = getSelectedProject(builder.getUIContext());
+        if (project != null) {
+            targetPackage.setDefaultValue(getBasePackageName(project));
+        }
+        targetPackage.addValidator(new PackageNameValidator());
+        targetPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
 
         builder.add(componentName).add(targetPackage);
     }

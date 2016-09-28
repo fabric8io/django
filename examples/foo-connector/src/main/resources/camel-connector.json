@@ -10,10 +10,18 @@
     "groupId":"io.fabric8.django",
     "artifactId":"foo-connector",
     "version":"2.3-SNAPSHOT",
-    "description":"something",
+    "description":"Something cool",
     "labels":[
         "foo",
         "timer"
     ],
-    "source":"From"
+    "source":"From",
+    "endpointOptions":[
+        "timerName",
+        "period"
+    ],
+    "endpointValues":{
+        "fixedRate":"true",
+        "period":"5000"
+    }
 }
