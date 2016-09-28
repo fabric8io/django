@@ -15,8 +15,10 @@
  */
 package io.fabric8.forge.ipaas.repository;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
@@ -29,20 +31,53 @@ public class DummyConnectionRepository implements ConnectionRepository {
 
     private final Map<String, ConnectionCatalogDto> dtos = new LinkedHashMap<>();
 
-    // some magic crappy forge/CDI will turn this into a manged bean
+    // some magic forge/CDI will turn this into a manged bean
     // Managed Bean [class io.fabric8.forge.ipaas.repository.DummyConnectionRepository] with qualifiers [@Any @Default],
     // so we cannot use a @Produces
 
     public DummyConnectionRepository() {
+        addHardcodedValues();
     }
 
     @Override
-    public List<ConnectionCatalogDto> search(String name, String type, String labels) {
-        return null;
+    public List<ConnectionCatalogDto> search(String filter) {
+        List<ConnectionCatalogDto> answer = new ArrayList<>();
+
+        if (filter != null) {
+            filter = filter.toLowerCase(Locale.US);
+
+            for (ConnectionCatalogDto dto : dtos.values()) {
+                String name = dto.getName().toLowerCase(Locale.US);
+                if (name.contains(filter)) {
+                    answer.add(dto);
+                } else if (dto.getLabels() != null) {
+                    for (String label : dto.getLabels()) {
+                        label = label.toLowerCase(Locale.US);
+                        if (label.contains(filter)) {
+                            answer.add(dto);
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            answer.addAll(dtos.values());
+        }
+
+        return answer;
     }
 
-    @Override
-    public void editLabels(String id, String labels) {
-        // noop
+    private void addHardcodedValues() {
+        ConnectionCatalogDto foo = new ConnectionCatalogDto();
+        foo.setName("Foo");
+        foo.setLabels(new String[]{"foo", "bar"});
+
+        ConnectionCatalogDto bar = new ConnectionCatalogDto();
+        bar.setName("Bar");
+        bar.setLabels(new String[]{"foo", "bar"});
+
+        dtos.put("Foo", foo);
+        dtos.put("Bar", bar);
     }
+
 }

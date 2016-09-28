@@ -28,7 +28,6 @@ import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
-import org.jboss.forge.addon.maven.projects.MavenFacet;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
@@ -42,6 +41,7 @@ import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.jboss.forge.roaster.Roaster;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 
@@ -54,7 +54,7 @@ import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
 
 @FacetConstraint({ResourcesFacet.class})
-public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand {
+public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
 
     @Inject
     @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
