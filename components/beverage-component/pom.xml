@@ -23,13 +23,13 @@
 
   <parent>
     <groupId>io.fabric8.django</groupId>
-    <artifactId>examples</artifactId>
+    <artifactId>components</artifactId>
     <version>2.3-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>beverage-component</artifactId>
-  <name>Fabric8 :: Django :: Examples :: beverage-component</name>
+  <name>Fabric8 :: Django :: Components :: beverage-component</name>
   <description>A custom Camel component for ordering drinks</description>
 
   <properties>

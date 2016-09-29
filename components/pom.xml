@@ -37,6 +37,7 @@
 
   <modules>
     <module>camel-connector</module>
+    <module>beverage-component</module>
   </modules>
 
 </project>

@@ -35,11 +35,10 @@
   </properties>
 
   <modules>
-    <module>beverage-component</module>
     <module>foo-connector</module>
     <module>bar-connector</module>
-    <module>foobar-example</module>
     <module>wine-connector</module>
+    <module>foobar-example</module>
   </modules>
 
   <dependencies>

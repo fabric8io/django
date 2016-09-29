@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.wine.connector</groupId>
+  <parent>
+    <groupId>io.fabric8.django</groupId>
+    <artifactId>examples</artifactId>
+    <version>2.3-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
   <artifactId>wine-connector</artifactId>
-  <packaging>jar</packaging>
-  <version>1.0.0-SNAPSHOT</version>
+  <name>Fabric8 :: Django :: Examples :: wine-connector</name>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -22,6 +26,16 @@
         <artifactId>camel-core</artifactId>
         <version>2.17.3</version>
       </dependency>
+      <dependency>
+        <groupId>io.fabric8.django</groupId>
+        <artifactId>beverage-component</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.fabric8.django</groupId>
+        <artifactId>camel-connector</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -30,6 +44,14 @@
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.fabric8.django</groupId>
+      <artifactId>beverage-component</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.fabric8.django</groupId>
+      <artifactId>camel-connector</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -37,7 +59,7 @@
       <plugin>
         <groupId>io.fabric8.django</groupId>
         <artifactId>connector-maven-plugin</artifactId>
-        <version>2.3-SNAPSHOT</version>
+        <version>${project.version}</version>
         <executions>
           <execution>
             <id>connector</id>
