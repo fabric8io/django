@@ -15,6 +15,7 @@
  */
 package io.fabric8.forge.ipaas.helper;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
 import org.apache.camel.catalog.CamelCatalog;
@@ -27,6 +28,7 @@ public class CamelCatalogService {
     private CamelCatalog instance;
 
     @Produces
+    @ApplicationScoped
     public CamelCatalog createCamelCatalog() {
         if (instance == null) {
             instance = new DefaultCamelCatalog(true);
