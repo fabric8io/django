@@ -58,9 +58,6 @@
     <resources>
       <resource>
         <directory>src/main/resources</directory>
-        <includes>
-          <include>camel-connector.json</include>
-        </includes>
         <filtering>true</filtering>
       </resource>
     </resources>

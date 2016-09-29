@@ -268,7 +268,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
         Model model = maven.getModel();
         Resource resource = new Resource();
         resource.setDirectory("src/main/resources");
-        resource.addInclude("camel-connector.json");
         resource.setFiltering(true);
         model.getBuild().getResources().add(resource);
         // set model to update it
