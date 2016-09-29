@@ -149,7 +149,9 @@
     <module>archetypes-catalog</module>
     <module>components</module>   
     <module>addons</module>
+    <!-- skip examples as CI server cannot do a release
     <module>examples</module>
+    -->
   </modules>
 
   <build>
