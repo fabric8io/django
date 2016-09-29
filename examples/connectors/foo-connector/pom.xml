@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>io.fabric8.django</groupId>
-    <artifactId>examples</artifactId>
+    <artifactId>connectors</artifactId>
     <version>2.3-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>wine-connector</artifactId>
-  <name>Fabric8 :: Django :: Examples :: wine-connector</name>
+  <artifactId>foo-connector</artifactId>
+  <name>Fabric8 :: Django :: Examples :: foo-connector</name>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -28,11 +29,6 @@
       </dependency>
       <dependency>
         <groupId>io.fabric8.django</groupId>
-        <artifactId>beverage-component</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.fabric8.django</groupId>
         <artifactId>camel-connector</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -43,10 +39,6 @@
     <dependency>
       <groupId>org.apache.camel</groupId>
       <artifactId>camel-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.fabric8.django</groupId>
-      <artifactId>beverage-component</artifactId>
     </dependency>
     <dependency>
       <groupId>io.fabric8.django</groupId>

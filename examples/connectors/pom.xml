@@ -15,28 +15,25 @@
      implied.  See the License for the specific language governing
      permissions and limitations under the License.
 
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>io.fabric8.django</groupId>
-    <artifactId>django-parent</artifactId>
+    <artifactId>examples</artifactId>
     <version>2.3-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>components</artifactId>
+  <artifactId>connectors</artifactId>
   <packaging>pom</packaging>
-  <name>Fabric8 :: Django :: Components</name>
-
-  <properties>
-    <camel.version>2.17.3</camel.version>
-  </properties>
+  <name>Fabric8 :: Django :: Examples :: Connectors</name>
 
   <modules>
-    <module>camel-connector</module>
+    <module>foo-connector</module>
+    <module>bar-connector</module>
+    <module>wine-connector</module>
   </modules>
 
 </project>
