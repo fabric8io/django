@@ -278,14 +278,6 @@
   <profiles>
     <profile>
       <id>release</id>
-      <modules>
-        <module>connector-maven-plugin</module>
-        <module>camel-connector-archetype</module>
-        <module>archetypes-catalog</module>
-        <module>components</module>   
-        <module>addons</module>
-        <!-- do not include examples in release -->
-      </modules>
       <build>
         <plugins>
           <plugin>
