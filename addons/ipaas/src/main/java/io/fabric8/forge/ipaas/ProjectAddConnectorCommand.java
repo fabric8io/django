@@ -33,6 +33,7 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizard;
 
+@Deprecated
 @FacetConstraint({ResourcesFacet.class})
 public class ProjectAddConnectorCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 

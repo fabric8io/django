@@ -89,6 +89,6 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
         context.getUIContext().getAttributeMap().put("labels", labels.getValue());
         context.getUIContext().getAttributeMap().put("source", source.getValue());
 
-        return Results.navigateTo(ConnectorSelectComponentStep.class);
+        return Results.navigateTo(CustomComponentChoiceStep.class);
     }
 }

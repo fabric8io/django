@@ -364,8 +364,8 @@ public class ConnectorMojo extends AbstractJarMojo {
     private String extractScheme(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"scheme\":")) {
-                String answer = line.substring(10);
+            if (line.startsWith("\"baseScheme\":")) {
+                String answer = line.substring(14);
                 return answer.substring(0, answer.length() - 2);
             }
         }
@@ -375,8 +375,8 @@ public class ConnectorMojo extends AbstractJarMojo {
     private String extractGroupId(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"groupId\":")) {
-                String answer = line.substring(11);
+            if (line.startsWith("\"baseGroupId\":")) {
+                String answer = line.substring(15);
                 return answer.substring(0, answer.length() - 2);
             }
         }
@@ -386,8 +386,8 @@ public class ConnectorMojo extends AbstractJarMojo {
     private String extractArtifactId(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"artifactId\":")) {
-                String answer = line.substring(14);
+            if (line.startsWith("\"baseArtifactId\":")) {
+                String answer = line.substring(18);
                 return answer.substring(0, answer.length() - 2);
             }
         }
@@ -397,8 +397,8 @@ public class ConnectorMojo extends AbstractJarMojo {
     private String extractVersion(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"version\":")) {
-                String answer = line.substring(11);
+            if (line.startsWith("\"baseVersion\":")) {
+                String answer = line.substring(15);
                 return answer.substring(0, answer.length() - 2);
             }
         }
