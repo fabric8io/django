@@ -121,6 +121,13 @@ public abstract class DjangoComponent extends DefaultComponent {
             throw new IllegalArgumentException("Cannot find camel-connector.json in classpath for connector " + componentName);
         }
 
+        // it may be a custom component so we need to register this in the camel catalog also
+        String scheme = extractBaseScheme(lines);
+        if (!catalog.findComponentNames().contains(scheme)) {
+            String javaType = extractBaseJavaType(lines);
+            catalog.addComponent(scheme, javaType);
+        }
+
         // the connector may have default values for the component level also
         // and if so we need to prepare these values and set on this component before we can start
 
@@ -232,6 +239,17 @@ public abstract class DjangoComponent extends DefaultComponent {
             line = line.trim();
             if (line.startsWith("\"javaType\":")) {
                 String answer = line.substring(12);
+                return answer.substring(0, answer.length() - 2);
+            }
+        }
+        return null;
+    }
+
+    private String extractBaseJavaType(List<String> json) {
+        for (String line : json) {
+            line = line.trim();
+            if (line.startsWith("\"baseJavaType\":")) {
+                String answer = line.substring(16);
                 return answer.substring(0, answer.length() - 2);
             }
         }
