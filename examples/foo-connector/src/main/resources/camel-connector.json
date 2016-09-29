@@ -4,6 +4,7 @@
     "baseGroupId":"org.apache.camel",
     "baseArtifactId":"camel-core",
     "baseVersion":"2.17.3",
+    "baseJavaType":"org.apache.camel.component.timer.TimerComponent",
     "name":"Foo",
     "scheme":"foo",
     "javaType":"org.foo.connector.FooComponent",

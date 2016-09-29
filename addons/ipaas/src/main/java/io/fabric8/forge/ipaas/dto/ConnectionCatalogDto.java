@@ -26,6 +26,7 @@ public class ConnectionCatalogDto {
     private String baseGroupId;
     private String baseArtifactId;
     private String baseVersion;
+    private String baseJavaType;
 
     private String name;
     private String scheme;
@@ -70,6 +71,14 @@ public class ConnectionCatalogDto {
 
     public void setBaseVersion(String baseVersion) {
         this.baseVersion = baseVersion;
+    }
+
+    public String getBaseJavaType() {
+        return baseJavaType;
+    }
+
+    public void setBaseJavaType(String baseJavaType) {
+        this.baseJavaType = baseJavaType;
     }
 
     public String getJavaType() {

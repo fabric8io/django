@@ -225,10 +225,10 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
         catalog.setBaseGroupId(dto.getGroupId());
         catalog.setBaseArtifactId(dto.getArtifactId());
         catalog.setBaseVersion(dto.getVersion());
-        catalog.setJavaType(javaType);
+        catalog.setBaseJavaType(dto.getJavaType());
 
         // the connector Maven GAV
-        catalog.setScheme(schemeName);
+        catalog.setJavaType(javaType);
         MavenFacet maven = project.getFacet(MavenFacet.class);
         catalog.setGroupId(maven.getModel().getGroupId());
         if (catalog.getGroupId() == null && maven.getModel().getParent() != null) {
@@ -242,6 +242,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             catalog.setVersion(maven.getModel().getParent().getVersion());
         }
 
+        catalog.setScheme(schemeName);
         catalog.setName(name);
         catalog.setDescription(description);
         if (labels != null) {
