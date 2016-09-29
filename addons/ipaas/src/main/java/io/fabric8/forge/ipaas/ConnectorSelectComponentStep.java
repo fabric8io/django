@@ -148,7 +148,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
         }
         componentName.getFacet(HintsFacet.class).setPromptInInteractiveMode(true);
 
-        Project project = getSelectedProject(builder.getUIContext());
+        Project project = getSelectedProjectOrNull(builder.getUIContext());
         if (project != null) {
             targetPackage.setDefaultValue(getBasePackageName(project));
         }
