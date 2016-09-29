@@ -10,7 +10,7 @@
   "javaType":"org.wine.connector.WineComponent",
   "groupId":"io.fabric8.django",
   "artifactId":"wine-connector",
-  "version":"2.3-SNAPSHOT",
+  "version":"${project.version}",
   "description":"To order wine from the bar",
   "labels":[
     "bar"

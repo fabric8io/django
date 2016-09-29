@@ -39,6 +39,7 @@
     <module>bar-connector</module>
     <module>wine-connector</module>
     <module>foobar-example</module>
+    <module>foowine-example</module>
   </modules>
 
   <dependencies>

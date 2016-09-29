@@ -10,7 +10,7 @@
     "javaType":"org.foo.connector.FooComponent",
     "groupId":"io.fabric8.django",
     "artifactId":"foo-connector",
-    "version":"2.3-SNAPSHOT",
+    "version":"${project.version}",
     "description":"Something cool",
     "labels":[
         "foo",
