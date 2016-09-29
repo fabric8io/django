@@ -18,14 +18,18 @@ package io.fabric8.forge.ipaas;
 import javax.inject.Inject;
 
 import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.facets.HintsFacet;
 import org.jboss.forge.addon.ui.input.UISelectOne;
+import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.util.Categories;
+import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 
 public class CustomComponentChoiceStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
@@ -39,6 +43,13 @@ public class CustomComponentChoiceStep extends AbstractIPaaSProjectCommand imple
         custom.getFacet(HintsFacet.class).setPromptInInteractiveMode(true);
 
         builder.add(custom);
+    }
+
+    @Override
+    public UICommandMetadata getMetadata(UIContext context) {
+        return Metadata.forCommand(AddCustomComponentStep.class)
+                .name("iPaaS: Custom or Default Camel Component").category(Categories.create(CATEGORY))
+                .description("Choose to use either a custom or default Camel component");
     }
 
     @Override
