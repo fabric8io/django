@@ -27,6 +27,8 @@ import io.fabric8.forge.ipaas.dto.ComponentDto;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.helper.VersionHelper;
 import org.apache.camel.catalog.CamelCatalog;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Resource;
 import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
@@ -236,11 +238,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             catalog.setGroupId(maven.getModel().getParent().getGroupId());
         }
         catalog.setArtifactId(maven.getModel().getArtifactId());
-        catalog.setVersion(maven.getModel().getVersion());
-        if (catalog.getVersion() == null && maven.getModel().getParent() != null) {
-            // maybe its inherited
-            catalog.setVersion(maven.getModel().getParent().getVersion());
-        }
+        catalog.setVersion("${project.version}");
 
         catalog.setScheme(schemeName);
         catalog.setName(name);
@@ -250,14 +248,31 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
         }
         catalog.setSource(source);
 
-        // add connector-maven-plugin if missing
+        // add maven filtering plugin if missing
         MavenPluginFacet pluginFacet = project.getFacet(MavenPluginFacet.class);
         MavenPluginBuilder plugin = MavenPluginBuilder.create()
+                .setCoordinate(createCoordinate("org.apache.camel.maven.plugins", "maven-resources-plugin", "3.0.1"));
+        if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
+            pluginFacet.addPlugin(plugin);
+        }
+
+        // add connector-maven-plugin if missing
+        plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
         plugin.addExecution(ExecutionBuilder.create().setId("connector").addGoal("jar"));
         if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
             pluginFacet.addPlugin(plugin);
         }
+
+        // need to add <resource> on the model as forge dont have a builder for this
+        Model model = maven.getModel();
+        Resource resource = new Resource();
+        resource.setDirectory("src/main/resources");
+        resource.addInclude("camel-connector.json");
+        resource.setFiltering(true);
+        model.getBuild().getResources().add(resource);
+        // set model to update it
+        maven.setModel(model);
 
         // marshal DTO
         String json = toJson(catalog);
