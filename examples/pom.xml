@@ -22,7 +22,7 @@
   <parent>
     <groupId>io.fabric8.django</groupId>
     <artifactId>django-parent</artifactId>
-    <version>2.3-SNAPSHOT</version>
+    <version>0.0.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
