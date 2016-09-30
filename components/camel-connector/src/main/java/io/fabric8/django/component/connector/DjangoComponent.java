@@ -35,6 +35,9 @@ import org.apache.camel.util.StringHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Base class for Camel Connector components.
+ */
 public abstract class DjangoComponent extends DefaultComponent {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
