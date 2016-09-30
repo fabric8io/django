@@ -155,7 +155,7 @@ public class ConnectorMojo extends AbstractJarMojo {
         ObjectMapper mapper = new ObjectMapper();
 
         StringBuilder sb = new StringBuilder();
-        sb.append(" \"componentProperties\": {\n");
+        sb.append("  \"componentProperties\": {\n");
 
         for (int i = 0; i < rows.size(); i++) {
             Map<String, String> row = rows.get(i);
@@ -184,7 +184,7 @@ public class ConnectorMojo extends AbstractJarMojo {
         ObjectMapper mapper = new ObjectMapper();
 
         StringBuilder sb = new StringBuilder();
-        sb.append(" \"properties\": {\n");
+        sb.append("  \"properties\": {\n");
 
         boolean first = true;
         for (int i = 0; i < rows.size(); i++) {
@@ -226,7 +226,7 @@ public class ConnectorMojo extends AbstractJarMojo {
     }
 
     private String buildComponentHeaderSchema(List<Map<String, String>> rows, Map dto) throws Exception {
-        String baseScheme = (String) dto.get("scheme");
+        String baseScheme = (String) dto.get("baseScheme");
         String source = (String) dto.get("source");
         String title = (String) dto.get("name");
         String scheme = camelCaseToDash(title);
@@ -254,7 +254,7 @@ public class ConnectorMojo extends AbstractJarMojo {
         String version = getProject().getVersion();
 
         StringBuilder sb = new StringBuilder();
-        sb.append(" \"component\": {\n");
+        sb.append("  \"component\": {\n");
         sb.append("    \"kind\": \"component\",\n");
         sb.append("    \"baseScheme\": \"" + baseScheme + "\",\n");
         sb.append("    \"scheme\": \"" + scheme + "\",\n");
