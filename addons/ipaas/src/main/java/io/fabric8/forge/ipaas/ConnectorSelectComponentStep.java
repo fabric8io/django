@@ -22,7 +22,6 @@ import java.util.Properties;
 import java.util.Set;
 import javax.inject.Inject;
 
-import io.fabric8.forge.addon.utils.validator.PackageNameValidator;
 import io.fabric8.forge.ipaas.dto.ComponentDto;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.helper.VersionHelper;
@@ -47,8 +46,6 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.facets.HintsFacet;
-import org.jboss.forge.addon.ui.hints.InputType;
-import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -76,10 +73,6 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
     @Inject
     @WithAttributes(label = "Camel Component", required = true, description = "The Camel component to use as connector")
     private UISelectOne<String> componentName;
-
-    @Inject
-    @WithAttributes(label = "Java Package", required = true, description = "Java package for creating source code")
-    private UIInput<String> targetPackage;
 
     @Inject
     private DependencyInstaller dependencyInstaller;
@@ -148,14 +141,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
         }
         componentName.getFacet(HintsFacet.class).setPromptInInteractiveMode(true);
 
-        Project project = getSelectedProjectOrNull(builder.getUIContext());
-        if (project != null) {
-            targetPackage.setDefaultValue(getBasePackageName(project));
-        }
-        targetPackage.addValidator(new PackageNameValidator());
-        targetPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
-
-        builder.add(componentName).add(targetPackage);
+        builder.add(componentName);
     }
 
     @Override
@@ -209,7 +195,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
 
         // create Camel component file
         String className = asJavaClassName(name) + "Component";
-        String packageName = targetPackage.getValue();
+        String packageName = getBasePackageName(project); // use base package as target
         String javaType = packageName + "." + className;
         FileResource<?> comp = getCamelComponentFile(project, schemeName);
         if (comp != null) {
