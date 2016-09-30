@@ -21,12 +21,13 @@ import org.apache.camel.DelegateEndpoint;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
+import org.apache.camel.api.management.ManagedAttribute;
+import org.apache.camel.api.management.ManagedResource;
 import org.apache.camel.impl.DefaultEndpoint;
 import org.apache.camel.util.ServiceHelper;
 
+@ManagedResource(description = "Managed Connector Endpoint")
 public class DjangoEndpoint extends DefaultEndpoint implements DelegateEndpoint {
-
-    // TODO: should we have consumer/producer?
 
     private final Endpoint endpoint;
 
@@ -53,6 +54,11 @@ public class DjangoEndpoint extends DefaultEndpoint implements DelegateEndpoint 
     @Override
     public Endpoint getEndpoint() {
         return endpoint;
+    }
+
+    @ManagedAttribute(description = "Delegate Endpoint URI", mask = true)
+    public String getDelegateEndpointUri() {
+        return endpoint.getEndpointUri();
     }
 
     @Override
