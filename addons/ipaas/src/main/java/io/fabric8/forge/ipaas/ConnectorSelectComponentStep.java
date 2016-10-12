@@ -242,6 +242,14 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             pluginFacet.addPlugin(plugin);
         }
 
+        // add camel maven plugin if missing
+        plugin = MavenPluginBuilder.create()
+                .setCoordinate(createCoordinate("org.apache.camel", "camel-package-maven-plugin", core.getCoordinate().getVersion()));
+        plugin.addExecution(ExecutionBuilder.create().setId("prepare").addGoal("prepare-components").setPhase("generate-resources"));
+        if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
+            pluginFacet.addPlugin(plugin);
+        }
+
         // add connector-maven-plugin if missing
         plugin = MavenPluginBuilder.create()
                 .setCoordinate(createCoordinate("io.fabric8.django", "connector-maven-plugin", version));
