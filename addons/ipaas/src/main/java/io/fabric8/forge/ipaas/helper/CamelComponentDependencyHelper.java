@@ -23,6 +23,8 @@ import java.util.Properties;
 
 import org.jboss.forge.addon.dependencies.Dependency;
 
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.loadText;
+
 public class CamelComponentDependencyHelper {
 
     public static Properties loadComponentProperties(Dependency dependency) {
@@ -42,6 +44,39 @@ public class CamelComponentDependencyHelper {
             }
         } catch (Throwable e) {
             // ignore
+        }
+
+        return answer;
+    }
+
+    public static String loadComponentJSonSchema(Dependency dependency, String scheme) {
+        String answer = null;
+
+        String path = null;
+        String javaType = extractComponentJavaType(dependency, scheme);
+        if (javaType != null) {
+            int pos = javaType.lastIndexOf(".");
+            path = javaType.substring(0, pos);
+            path = path.replace('.', '/');
+            path = path + "/" + scheme + ".json";
+        }
+
+        if (path != null) {
+            try {
+                // is it a JAR file
+                File file = dependency.getArtifact().getUnderlyingResourceObject();
+                if (file != null && file.getName().toLowerCase().endsWith(".jar")) {
+                    URL url = new URL("file:" + file.getAbsolutePath());
+                    URLClassLoader child = new URLClassLoader(new URL[]{url});
+
+                    InputStream is = child.getResourceAsStream(path);
+                    if (is != null) {
+                        answer = loadText(is);
+                    }
+                }
+            } catch (Throwable e) {
+                // ignore
+            }
         }
 
         return answer;
