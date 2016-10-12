@@ -17,17 +17,22 @@ package io.fabric8.forge.ipaas;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import javax.inject.Inject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.forge.addon.utils.CamelProjectHelper;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
+import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.convert.ConverterFactory;
 import org.jboss.forge.addon.dependencies.Coordinate;
 import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.dependencies.builder.CoordinateBuilder;
+import org.jboss.forge.addon.maven.projects.facets.MavenDependencyFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.ProjectFactory;
@@ -40,6 +45,10 @@ import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIContextProvider;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UIRegion;
+
+import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.extractComponentJavaType;
+import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentJSonSchema;
+import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentProperties;
 
 public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand {
 
@@ -289,6 +298,39 @@ public abstract class AbstractIPaaSProjectCommand extends AbstractProjectCommand
         }
 
         return target != null ? target : currentFile;
+    }
+
+    protected Set<String> discoverCustomCamelComponentsOnClasspathAndAddToCatalog(CamelCatalog camelCatalog, Project project) {
+        Set<String> answer = new LinkedHashSet<>();
+
+        // find the dependency again because forge don't associate artifact on the returned dependency when installed
+        MavenDependencyFacet facet = project.getFacet(MavenDependencyFacet.class);
+        List<Dependency> list = facet.getEffectiveDependencies();
+
+        for (Dependency dep : list) {
+            Properties properties = loadComponentProperties(dep);
+            if (properties != null) {
+                String components = (String) properties.get("components");
+                if (components != null) {
+                    String[] part = components.split("\\s");
+                    for (String scheme : part) {
+                        if (!camelCatalog.findComponentNames().contains(scheme)) {
+                            // find the class name
+                            String javaType = extractComponentJavaType(dep, scheme);
+                            if (javaType != null) {
+                                String json = loadComponentJSonSchema(dep, scheme);
+                                if (json != null) {
+                                    camelCatalog.addComponent(scheme, javaType, json);
+                                    answer.add(scheme);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return answer;
     }
 
 }

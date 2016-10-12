@@ -15,12 +15,9 @@
  */
 package io.fabric8.forge.ipaas;
 
-import java.util.List;
-import java.util.Properties;
 import javax.inject.Inject;
 
 import org.apache.camel.catalog.CamelCatalog;
-import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.maven.projects.facets.MavenDependencyFacet;
 import org.jboss.forge.addon.projects.Project;
@@ -34,10 +31,6 @@ import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
-
-import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.extractComponentJavaType;
-import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentJSonSchema;
-import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentProperties;
 
 @FacetConstraint({MavenDependencyFacet.class})
 public class ConnectorDetailsCommand extends AbstractIPaaSProjectCommand {
@@ -82,7 +75,7 @@ public class ConnectorDetailsCommand extends AbstractIPaaSProjectCommand {
             // discover classpath and find all the connectors and add them to the catalog
             Project project = getSelectedProjectOrNull(context.getUIContext());
             if (project != null) {
-                discoverCamelConnectorOnClasspathAndAddToCatalog(camelCatalog, project);
+                discoverCustomCamelComponentsOnClasspathAndAddToCatalog(camelCatalog, project);
             }
             // load schema again
             json = camelCatalog.componentJSonSchema(scheme);
@@ -95,31 +88,4 @@ public class ConnectorDetailsCommand extends AbstractIPaaSProjectCommand {
         }
     }
 
-    private void discoverCamelConnectorOnClasspathAndAddToCatalog(CamelCatalog camelCatalog, Project project) {
-        // find the dependency again because forge don't associate artifact on the returned dependency when installed
-        MavenDependencyFacet facet = project.getFacet(MavenDependencyFacet.class);
-        List<Dependency> list = facet.getEffectiveDependencies();
-
-        for (Dependency dep : list) {
-            Properties properties = loadComponentProperties(dep);
-            if (properties != null) {
-                String components = (String) properties.get("components");
-                if (components != null) {
-                    String[] part = components.split("\\s");
-                    for (String scheme : part) {
-                        if (!camelCatalog.findComponentNames().contains(scheme)) {
-                            // find the class name
-                            String javaType = extractComponentJavaType(dep, scheme);
-                            if (javaType != null) {
-                                String json = loadComponentJSonSchema(dep, scheme);
-                                if (json != null) {
-                                    camelCatalog.addComponent(scheme, javaType, json);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

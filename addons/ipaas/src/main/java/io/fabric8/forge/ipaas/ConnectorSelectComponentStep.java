@@ -16,9 +16,7 @@
 package io.fabric8.forge.ipaas;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import javax.inject.Inject;
 
@@ -35,7 +33,6 @@ import org.jboss.forge.addon.maven.plugins.ExecutionBuilder;
 import org.jboss.forge.addon.maven.plugins.MavenPluginBuilder;
 import org.jboss.forge.addon.maven.projects.MavenFacet;
 import org.jboss.forge.addon.maven.projects.MavenPluginFacet;
-import org.jboss.forge.addon.maven.projects.facets.MavenDependencyFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
@@ -64,8 +61,6 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentConsum
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.isComponentProducerOnly;
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asJavaClassName;
 import static io.fabric8.forge.ipaas.helper.CamelCommandsHelper.asSchemeName;
-import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.extractComponentJavaType;
-import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentProperties;
 
 @FacetConstraint({ResourcesFacet.class, JavaSourceFacet.class, MavenPluginFacet.class, MavenFacet.class})
 public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand implements UIWizardStep {
@@ -323,47 +318,16 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
     }
 
     private Set<String> addCustomComponent(Project project, String g, String a, String v) throws Exception {
-
-        Set<String> answer = new LinkedHashSet<>();
-
         // download the JAR and look inside to find its javaType so we can add it to the catalog
         DependencyBuilder component = DependencyBuilder.create()
                 .setGroupId(g).setArtifactId(a).setVersion(v);
         Dependency dependency = dependencyInstaller.install(project, component);
 
         if (dependency == null) {
-            return answer;
+            return null;
         }
 
-        // find the dependency again because forge don't associate artifact on the returned dependency when installed
-        MavenDependencyFacet facet = project.getFacet(MavenDependencyFacet.class);
-        List<Dependency> list = facet.getEffectiveDependencies();
-
-        for (Dependency dep : list) {
-            if (dep.getCoordinate().getGroupId().equals(g) && dep.getCoordinate().getArtifactId().equals(a)) {
-                Properties properties = loadComponentProperties(dep);
-                if (properties != null) {
-                    String components = (String) properties.get("components");
-                    if (components != null) {
-                        String[] part = components.split("\\s");
-                        for (String scheme : part) {
-                            if (!camelCatalog.findComponentNames().contains(scheme)) {
-                                // find the class name
-                                String javaType = extractComponentJavaType(dep, scheme);
-                                if (javaType != null) {
-                                    camelCatalog.addComponent(scheme, javaType);
-                                    answer.add(scheme);
-                                }
-                            }
-                        }
-                    }
-                }
-                // no need to loop anymore
-                break;
-            }
-        }
-
-        return answer;
+        return discoverCustomCamelComponentsOnClasspathAndAddToCatalog(camelCatalog, project);
     }
 
 }
