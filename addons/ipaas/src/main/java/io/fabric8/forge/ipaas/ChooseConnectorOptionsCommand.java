@@ -27,6 +27,7 @@ import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.model.InputOptionByGroup;
 import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
+import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.facets.ResourcesFacet;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -102,6 +103,13 @@ public class ChooseConnectorOptionsCommand extends AbstractIPaaSProjectCommand i
         if (dto == null) {
             return null;
         }
+
+        // there may be custom components so load them from classpath
+        Project project = getSelectedProjectOrNull(context.getUIContext());
+        if (project != null) {
+            discoverCustomCamelComponentsOnClasspathAndAddToCatalog(camelCatalog, project);
+        }
+
         ComponentDto component = createComponentDto(camelCatalog, dto.getBaseScheme());
         if (component == null) {
             return null;
