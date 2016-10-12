@@ -36,6 +36,7 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 
 import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.extractComponentJavaType;
+import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentJSonSchema;
 import static io.fabric8.forge.ipaas.helper.CamelComponentDependencyHelper.loadComponentProperties;
 
 @FacetConstraint({MavenDependencyFacet.class})
@@ -110,7 +111,10 @@ public class ConnectorDetailsCommand extends AbstractIPaaSProjectCommand {
                             // find the class name
                             String javaType = extractComponentJavaType(dep, scheme);
                             if (javaType != null) {
-                                camelCatalog.addComponent(scheme, javaType);
+                                String json = loadComponentJSonSchema(dep, scheme);
+                                if (json != null) {
+                                    camelCatalog.addComponent(scheme, javaType, json);
+                                }
                             }
                         }
                     }
