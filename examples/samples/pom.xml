@@ -31,6 +31,7 @@
   <name>Fabric8 :: Django :: Examples :: Samples</name>
 
   <modules>
+    <module>custom-sample</module>
     <module>foobar-sample</module>
     <module>foobar-xml-sample</module>
     <module>foowine-sample</module>
