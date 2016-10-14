@@ -25,6 +25,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.enterprise.context.ApplicationScoped;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -33,6 +39,7 @@ import javax.xml.xpath.XPathFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
+import io.fabric8.forge.ipaas.dto.NexusArtifactDto;
 import io.fabric8.utils.IOHelpers;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -40,110 +47,56 @@ import org.w3c.dom.NodeList;
 
 import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.loadText;
 
+@ApplicationScoped
 public class NexusConnectionRepository implements ConnectionRepository {
 
-    // TODO: schedule index as background task to run every X minutes
     // TODO: use kubernetes service lookup
     // TODO: newer version should replace older version?
+    // TODO: allow to configure options
+
+    private int delay = 60;
+    private ScheduledExecutorService executorService;
 
     private static String NEXUS_URL = "http://nexus.fabric8.rh.fabric8.io/service/local/data_index";
 
     private final Set<NexusArtifactDto> indexedArtifacts = new LinkedHashSet<>();
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
 
+    // TODO: remove me
     public static void main(String[] args) {
         NexusConnectionRepository me = new NexusConnectionRepository();
-        me.indexNexus();
+        me.start();
 
-        // search for foo
-        List<ConnectionCatalogDto> list = me.search("foo");
-        System.out.println(list);
-
-        list = me.search("cool");
-        System.out.println(list);
-
-        list = me.search("bar");
-        System.out.println(list);
-    }
-
-    public void indexNexus() {
         try {
-            String query = NEXUS_URL + "?q=connector";
-            URL url = new URL(query);
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setIgnoringElementContentWhitespace(true);
-            factory.setIgnoringComments(true);
-
-            DocumentBuilder documentBuilder = factory.newDocumentBuilder();
-
-            InputStream is = url.openStream();
-            Document dom = documentBuilder.parse(is);
-
-            XPathFactory xpFactory = XPathFactory.newInstance();
-            XPath exp = xpFactory.newXPath();
-            NodeList list = (NodeList) exp.evaluate("//classifier[text() = 'connector']", dom, XPathConstants.NODESET);
-
-            Set<NexusArtifactDto> newArtifacts = new LinkedHashSet<>();
-            for (int i = 0; i < list.getLength(); i++) {
-                Node node = list.item(i);
-                Node parent = node.getParentNode();
-
-                String g = getNodeText(parent.getChildNodes(), "groupId");
-                String a = getNodeText(parent.getChildNodes(), "artifactId");
-                String v = getNodeText(parent.getChildNodes(), "version");
-                String l = getNodeText(parent.getChildNodes(), "artifactLink");
-
-                if (g != null & a != null & v != null & l != null) {
-                    NexusArtifactDto dto = new NexusArtifactDto();
-                    dto.setGroupId(g);
-                    dto.setArtifactId(a);
-                    dto.setVersion(v);
-                    dto.setArtifactLink(l);
-
-                    // is it a new artifact
-                    if (!indexedArtifacts.contains(dto)) {
-                        newArtifacts.add(dto);
-                    }
-                }
-            }
-
-            // now download the new artifact JARs and look inside to find more details
-            for (NexusArtifactDto dto : newArtifacts) {
-                // download using url classloader reader
-                URL jarUrl = new URL(dto.getArtifactLink());
-                String json = loadCamelConnectorJSonSchema(jarUrl);
-                System.out.println(json);
-
-                ObjectMapper mapper = new ObjectMapper();
-                ConnectionCatalogDto cat = mapper.readerFor(ConnectionCatalogDto.class).readValue(json);
-                connectors.putIfAbsent(dto, cat);
-            }
-
-            IOHelpers.close(is);
-
-        } catch (Exception e) {
-            System.out.println("Error indexing Nexus " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private String loadCamelConnectorJSonSchema(URL url) {
-        try {
-            // is it a JAR file
-            URLClassLoader child = new URLClassLoader(new URL[]{url});
-            InputStream is = child.getResourceAsStream("camel-connector.json");
-            if (is != null) {
-                return loadText(is);
-            }
-            IOHelpers.close(is);
-        } catch (Throwable e) {
-            e.printStackTrace();
+            Thread.sleep(300 * 1000);
+        } catch (InterruptedException e) {
             // ignore
         }
+        me.stop();
+    }
 
-        return null;
+    @PostConstruct
+    public void start() {
+        System.out.println("Indexing Nexus every " + delay + " seconds interval");
+        executorService = Executors.newScheduledThreadPool(1);
+
+        executorService.scheduleWithFixedDelay(() -> {
+            try {
+                System.out.println("Indexing Nexus " + NEXUS_URL + " +++ start +++");
+                indexNexus();
+            } catch (Throwable e) {
+                System.err.println("Error indexing Nexus " + NEXUS_URL + " due " + e.getMessage());
+            } finally {
+                System.out.println("Indexing Nexus " + NEXUS_URL + " +++ end +++");
+            }
+        }, 10, delay, TimeUnit.SECONDS);
+    }
+
+    @PreDestroy
+    public void stop() {
+        if (executorService != null) {
+            executorService.shutdownNow();
+        }
     }
 
     @Override
@@ -183,6 +136,86 @@ public class NexusConnectionRepository implements ConnectionRepository {
         }
 
         return answer;
+    }
+
+    protected void indexNexus() throws Exception {
+        String query = NEXUS_URL + "?q=connector";
+        URL url = new URL(query);
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setIgnoringElementContentWhitespace(true);
+        factory.setIgnoringComments(true);
+
+        DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+
+        InputStream is = url.openStream();
+        Document dom = documentBuilder.parse(is);
+
+        XPathFactory xpFactory = XPathFactory.newInstance();
+        XPath exp = xpFactory.newXPath();
+        NodeList list = (NodeList) exp.evaluate("//classifier[text() = 'connector']", dom, XPathConstants.NODESET);
+
+        Set<NexusArtifactDto> newArtifacts = new LinkedHashSet<>();
+        for (int i = 0; i < list.getLength(); i++) {
+            Node node = list.item(i);
+            Node parent = node.getParentNode();
+
+            String g = getNodeText(parent.getChildNodes(), "groupId");
+            String a = getNodeText(parent.getChildNodes(), "artifactId");
+            String v = getNodeText(parent.getChildNodes(), "version");
+            String l = getNodeText(parent.getChildNodes(), "artifactLink");
+
+            if (g != null & a != null & v != null & l != null) {
+                NexusArtifactDto dto = new NexusArtifactDto();
+                dto.setGroupId(g);
+                dto.setArtifactId(a);
+                dto.setVersion(v);
+                dto.setArtifactLink(l);
+
+                // is it a new artifact
+                if (!indexedArtifacts.contains(dto)) {
+                    newArtifacts.add(dto);
+                }
+            }
+        }
+
+        // now download the new artifact JARs and look inside to find more details
+        for (NexusArtifactDto dto : newArtifacts) {
+            try {
+                // download using url classloader reader
+                URL jarUrl = new URL(dto.getArtifactLink());
+                String json = loadCamelConnectorJSonSchema(jarUrl);
+
+                ObjectMapper mapper = new ObjectMapper();
+                ConnectionCatalogDto cat = mapper.readerFor(ConnectionCatalogDto.class).readValue(json);
+
+                indexedArtifacts.add(dto);
+                connectors.putIfAbsent(dto, cat);
+                System.out.println("Added connector: " + dto.getGroupId() + ":" + dto.getArtifactId() + ":" + dto.getVersion());
+            } catch (Exception e) {
+                System.err.println("Error downloading connector JAR " + dto.getArtifactLink() + ". This exception is ignored. " + e.getMessage());
+            }
+        }
+
+        IOHelpers.close(is);
+    }
+
+    private static String loadCamelConnectorJSonSchema(URL url) {
+        try {
+            // is it a JAR file
+            URLClassLoader child = new URLClassLoader(new URL[]{url});
+            InputStream is = child.getResourceAsStream("camel-connector.json");
+            if (is != null) {
+                return loadText(is);
+            }
+            IOHelpers.close(is);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            // ignore
+        }
+
+        return null;
     }
 
     private static String getNodeText(NodeList list, String name) {
