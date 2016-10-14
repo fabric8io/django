@@ -63,7 +63,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
 
     @Inject
     @ConfigProperty(name = "NEXUS_INDEX_DELAY", defaultValue = "60")
-    private int delay = 60;
+    private Long delay = 60L;
 
     @Inject
     @ServiceName("nexus")
@@ -94,11 +94,11 @@ public class NexusConnectionRepository implements ConnectionRepository {
         this.nexusUrl = nexusUrl;
     }
 
-    public int getDelay() {
+    public Long getDelay() {
         return delay;
     }
 
-    public void setDelay(int delay) {
+    public void setDelay(Long delay) {
         this.delay = delay;
     }
 
