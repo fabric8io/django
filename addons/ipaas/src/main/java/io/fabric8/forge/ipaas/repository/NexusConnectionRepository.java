@@ -55,6 +55,8 @@ public class NexusConnectionRepository implements ConnectionRepository {
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
     private volatile ScheduledExecutorService executorService;
 
+    private static final String CLASSIFIER = "camel-connector";
+
     private Long delay = 60L; // use 60 second delay between index runs
     private String nexusUrl = "http://nexus/service/local/data_index";
 
@@ -169,6 +171,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
     }
 
     protected void indexNexus() throws Exception {
+        // must have q parameter so use connector to find all connectors
         String query = nexusUrl + "?q=connector";
         URL url = new URL(query);
 
@@ -184,7 +187,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
 
         XPathFactory xpFactory = XPathFactory.newInstance();
         XPath exp = xpFactory.newXPath();
-        NodeList list = (NodeList) exp.evaluate("//classifier[text() = 'connector']", dom, XPathConstants.NODESET);
+        NodeList list = (NodeList) exp.evaluate("//classifier[text() = '" + CLASSIFIER + "']", dom, XPathConstants.NODESET);
 
         Set<NexusArtifactDto> newArtifacts = new LinkedHashSet<>();
         for (int i = 0; i < list.getLength(); i++) {
