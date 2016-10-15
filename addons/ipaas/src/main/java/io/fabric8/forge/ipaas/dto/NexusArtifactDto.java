@@ -77,7 +77,6 @@ public class NexusArtifactDto implements Serializable {
         if (!groupId.equals(that.groupId)) return false;
         if (!artifactId.equals(that.artifactId)) return false;
         return version.equals(that.version);
-
     }
 
     @Override
