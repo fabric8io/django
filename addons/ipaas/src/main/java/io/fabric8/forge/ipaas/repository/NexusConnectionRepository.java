@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -39,13 +38,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.annotations.Path;
-import io.fabric8.annotations.Protocol;
-import io.fabric8.annotations.ServiceName;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.dto.NexusArtifactDto;
 import io.fabric8.utils.IOHelpers;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -61,30 +56,8 @@ public class NexusConnectionRepository implements ConnectionRepository {
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
     private volatile ScheduledExecutorService executorService;
 
-    @Inject
-    @ConfigProperty(name = "NEXUS_INDEX_DELAY", defaultValue = "60")
     private Long delay = 60L;
-
-    @Inject
-    @ServiceName("nexus")
-    @Protocol("http")
-    @Path("service/local/data_index")
-    private String nexusUrl;
-
-//    private static String NEXUS_URL = "http://nexus.fabric8.rh.fabric8.io/service/local/data_index";
-
-    // TODO: remove me
-    public static void main(String[] args) {
-        NexusConnectionRepository me = new NexusConnectionRepository();
-        me.start();
-
-        try {
-            Thread.sleep(300 * 1000);
-        } catch (InterruptedException e) {
-            // ignore
-        }
-        me.stop();
-    }
+    private String nexusUrl = "http://nexus/service/local/data_index";
 
     public String getNexusUrl() {
         return nexusUrl;
