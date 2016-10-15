@@ -21,6 +21,6 @@ import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 
 public interface ConnectionRepository {
 
-    List<ConnectionCatalogDto> search(String filter);
+    List<ConnectionCatalogDto> search(String filter, boolean latestVersionOnly);
 
 }

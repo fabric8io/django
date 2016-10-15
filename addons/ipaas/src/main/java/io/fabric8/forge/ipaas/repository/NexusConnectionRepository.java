@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -31,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -39,13 +39,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.annotations.Path;
-import io.fabric8.annotations.Protocol;
-import io.fabric8.annotations.ServiceName;
 import io.fabric8.forge.ipaas.dto.ConnectionCatalogDto;
 import io.fabric8.forge.ipaas.dto.NexusArtifactDto;
 import io.fabric8.utils.IOHelpers;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -55,36 +51,12 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.loadText;
 @ApplicationScoped
 public class NexusConnectionRepository implements ConnectionRepository {
 
-    // TODO: newer version should replace older version?
-
     private final Set<NexusArtifactDto> indexedArtifacts = new LinkedHashSet<>();
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
     private volatile ScheduledExecutorService executorService;
 
-    @Inject
-    @ConfigProperty(name = "NEXUS_INDEX_DELAY", defaultValue = "60")
-    private Long delay = 60L;
-
-    @Inject
-    @ServiceName("nexus")
-    @Protocol("http")
-    @Path("service/local/data_index")
-    private String nexusUrl;
-
-//    private static String NEXUS_URL = "http://nexus.fabric8.rh.fabric8.io/service/local/data_index";
-
-    // TODO: remove me
-    public static void main(String[] args) {
-        NexusConnectionRepository me = new NexusConnectionRepository();
-        me.start();
-
-        try {
-            Thread.sleep(300 * 1000);
-        } catch (InterruptedException e) {
-            // ignore
-        }
-        me.stop();
-    }
+    private Long delay = 60L; // use 60 second delay between index runs
+    private String nexusUrl = "http://nexus/service/local/data_index";
 
     public String getNexusUrl() {
         return nexusUrl;
@@ -132,7 +104,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
     }
 
     @Override
-    public List<ConnectionCatalogDto> search(String filter) {
+    public List<ConnectionCatalogDto> search(String filter, boolean latestVersionOnly) {
         List<ConnectionCatalogDto> answer = new ArrayList<>();
 
         if (filter == null || filter.isEmpty()) {
@@ -165,6 +137,32 @@ public class NexusConnectionRepository implements ConnectionRepository {
                     }
                 }
             }
+        }
+
+        // filter only latest version
+        if (latestVersionOnly && answer.size() > 1) {
+            // sort first
+            Collections.sort(answer, (o1, o2) -> o1.getMavenGav().compareTo(o2.getMavenGav()));
+
+            // keep only latest in each group
+            List<ConnectionCatalogDto> unique = new ArrayList<>();
+            ConnectionCatalogDto prev = null;
+
+            for (ConnectionCatalogDto dto : answer) {
+                if (prev == null
+                        || (prev.getGroupId().equals(dto.getGroupId()) && prev.getArtifactId().equals(dto.getArtifactId()))) {
+                    prev = dto;
+                } else {
+                    unique.add(prev);
+                    prev = dto;
+                }
+            }
+            if (prev != null) {
+                // special for last element
+                unique.add(prev);
+            }
+
+            answer = unique;
         }
 
         return answer;

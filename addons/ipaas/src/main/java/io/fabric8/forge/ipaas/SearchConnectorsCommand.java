@@ -33,11 +33,15 @@ import org.jboss.forge.addon.ui.util.Metadata;
 
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
-public class ConnectionSearchCommand extends AbstractIPaaSProjectCommand {
+public class SearchConnectorsCommand extends AbstractIPaaSProjectCommand {
 
     @Inject
     @WithAttributes(label = "Filter", description = "Filter to use when searching")
     private UIInput<String> filter;
+
+    @Inject
+    @WithAttributes(label = "Latest Version", defaultValue = "true", description = "Only return latest version")
+    private UIInput<Boolean> latest;
 
     @Inject
     private ConnectionRepository repository;
@@ -57,19 +61,19 @@ public class ConnectionSearchCommand extends AbstractIPaaSProjectCommand {
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(ConnectionSearchCommand.class)
+        return Metadata.forCommand(SearchConnectorsCommand.class)
                 .name("iPaaS: Search Connectors").category(Categories.create(CATEGORY))
                 .description("Search for connectors");
     }
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(filter);
+        builder.add(filter).add(latest);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
-        List<ConnectionCatalogDto> list = repository.search(filter.getValue());
+        List<ConnectionCatalogDto> list = repository.search(filter.getValue(), latest.getValue());
         if (list.isEmpty()) {
             return Results.success();
         } else {

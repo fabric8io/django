@@ -87,26 +87,6 @@
       </exclusions>
     </dependency>
 
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>fabric8-cdi</artifactId>
-      <version>${fabric8.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>jul-to-slf4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
     <!-- we use dtos with jackson annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

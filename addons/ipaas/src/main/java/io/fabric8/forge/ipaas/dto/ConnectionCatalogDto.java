@@ -181,4 +181,12 @@ public class ConnectionCatalogDto {
     public String toString() {
         return name;
     }
+
+    public String getBaseMavenGav() {
+        return baseGroupId + ":" + baseArtifactId + ":" + baseVersion;
+    }
+
+    public String getMavenGav() {
+        return groupId + ":" + artifactId + ":" + version;
+    }
 }

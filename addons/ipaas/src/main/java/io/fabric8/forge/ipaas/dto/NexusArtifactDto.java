@@ -24,6 +24,16 @@ public class NexusArtifactDto implements Serializable {
     private String version;
     private String artifactLink;
 
+    public NexusArtifactDto() {
+    }
+
+    public NexusArtifactDto(String groupId, String artifactId, String version, String artifactLink) {
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.version = version;
+        this.artifactLink = artifactLink;
+    }
+
     public String getGroupId() {
         return groupId;
     }

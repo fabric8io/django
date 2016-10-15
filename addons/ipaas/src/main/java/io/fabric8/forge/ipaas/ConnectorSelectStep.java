@@ -62,7 +62,7 @@ public class ConnectorSelectStep extends AbstractIPaaSProjectCommand implements 
     public void initializeUI(UIBuilder builder) throws Exception {
         String filter = (String) builder.getUIContext().getAttributeMap().get("filter");
 
-        connectors.setValueChoices(repository.search(filter));
+        connectors.setValueChoices(repository.search(filter, true));
         connectors.setItemLabelConverter(ConnectionCatalogDto::getName);
         connectors.setValueConverter(s -> {
             for (ConnectionCatalogDto dto : connectors.getValueChoices()) {
