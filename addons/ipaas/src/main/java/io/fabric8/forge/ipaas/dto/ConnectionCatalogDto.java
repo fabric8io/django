@@ -17,6 +17,7 @@ package io.fabric8.forge.ipaas.dto;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -182,10 +183,12 @@ public class ConnectionCatalogDto {
         return name;
     }
 
+    @JsonIgnore
     public String getBaseMavenGav() {
         return baseGroupId + ":" + baseArtifactId + ":" + baseVersion;
     }
 
+    @JsonIgnore
     public String getMavenGav() {
         return groupId + ":" + artifactId + ":" + version;
     }
