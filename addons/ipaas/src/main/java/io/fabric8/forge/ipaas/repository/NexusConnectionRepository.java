@@ -206,8 +206,19 @@ public class NexusConnectionRepository implements ConnectionRepository {
                 dto.setVersion(v);
                 dto.setArtifactLink(l);
 
+                System.out.println("Found connector: " + dto.getGroupId() + ":" + dto.getArtifactId() + ":" + dto.getVersion());
+
                 // is it a new artifact
-                if (!indexedArtifacts.contains(dto)) {
+                boolean newArtifact = true;
+                for (NexusArtifactDto existing : indexedArtifacts) {
+                    if (existing.getGroupId().equals(dto.getGroupId())
+                            && existing.getArtifactId().equals(dto.getArtifactId())
+                            && existing.getVersion().equals(dto.getVersion())) {
+                        newArtifact = false;
+                        break;
+                    }
+                }
+                if (newArtifact) {
                     newArtifacts.add(dto);
                 }
             }
