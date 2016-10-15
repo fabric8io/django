@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -50,13 +51,11 @@ import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.loadText;
 @ApplicationScoped
 public class NexusConnectionRepository implements ConnectionRepository {
 
-    // TODO: newer version should replace older version?
-
     private final Set<NexusArtifactDto> indexedArtifacts = new LinkedHashSet<>();
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
     private volatile ScheduledExecutorService executorService;
 
-    private Long delay = 60L;
+    private Long delay = 60L; // use 60 second delay between index runs
     private String nexusUrl = "http://nexus/service/local/data_index";
 
     public String getNexusUrl() {
@@ -105,7 +104,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
     }
 
     @Override
-    public List<ConnectionCatalogDto> search(String filter) {
+    public List<ConnectionCatalogDto> search(String filter, boolean latestVersionOnly) {
         List<ConnectionCatalogDto> answer = new ArrayList<>();
 
         if (filter == null || filter.isEmpty()) {
@@ -138,6 +137,32 @@ public class NexusConnectionRepository implements ConnectionRepository {
                     }
                 }
             }
+        }
+
+        // filter only latest version
+        if (latestVersionOnly && answer.size() > 1) {
+            // sort first
+            Collections.sort(answer, (o1, o2) -> o1.getMavenGav().compareTo(o2.getMavenGav()));
+
+            // keep only latest in each group
+            List<ConnectionCatalogDto> unique = new ArrayList<>();
+            ConnectionCatalogDto prev = null;
+
+            for (ConnectionCatalogDto dto : answer) {
+                if (prev == null
+                        || (prev.getGroupId().equals(dto.getGroupId()) && prev.getArtifactId().equals(dto.getArtifactId()))) {
+                    prev = dto;
+                } else {
+                    unique.add(prev);
+                    prev = dto;
+                }
+            }
+            if (prev != null) {
+                // special for last element
+                unique.add(prev);
+            }
+
+            answer = unique;
         }
 
         return answer;
