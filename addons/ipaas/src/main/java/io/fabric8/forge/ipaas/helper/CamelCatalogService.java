@@ -23,8 +23,6 @@ import org.apache.camel.catalog.DefaultCamelCatalog;
 
 public class CamelCatalogService {
 
-    // TODO: require Camel 2.18 and copy the ForgeCamelVersionManager from the camel addon
-
     private CamelCatalog instance;
 
     @Produces
