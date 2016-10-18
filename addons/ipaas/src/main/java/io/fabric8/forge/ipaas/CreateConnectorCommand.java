@@ -18,6 +18,7 @@ package io.fabric8.forge.ipaas;
 import java.util.Arrays;
 import javax.inject.Inject;
 
+import io.fabric8.forge.ipaas.utils.ConnectorNameValidator;
 import org.apache.camel.catalog.CamelCatalog;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -38,10 +39,8 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     private static String[] sources = new String[]{"Anywhere", "From", "To"};
 
-    // TODO: name should be like Camel component name (eg lowercase and no digits/space, only dash)
-
     @Inject
-    @WithAttributes(label = "Name", required = true, description = "Name of connector (only a..z and - chars permitted)")
+    @WithAttributes(label = "Name", required = true, description = "Name of connector")
     private UIInput<String> name;
 
     @Inject
@@ -73,6 +72,9 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
+        // name must only be A..Z and dash
+        name.addValidator(new ConnectorNameValidator());
+
         builder.add(name).add(description).add(labels).add(source);
         source.setValueChoices(Arrays.asList(sources));
     }
