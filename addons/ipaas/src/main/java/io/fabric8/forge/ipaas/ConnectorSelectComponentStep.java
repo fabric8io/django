@@ -170,10 +170,13 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             return Results.fail("Cannot find camel component with name " + scheme);
         }
 
-        // install component as dependency
-        if (!hasDependency(project, dto.getGroupId(), dto.getArtifactId(), core.getCoordinate().getVersion())) {
+        // favor using same version as camel-core (however it may be unknown) and if so use the version from the component dto
+        String camelVersion = (core != null && core.getCoordinate() != null && core.getCoordinate().getVersion() != null) ? core.getCoordinate().getVersion() : dto.getVersion();
+
+        // install Camel component as dependency
+        if (!hasDependency(project, dto.getGroupId(), dto.getArtifactId(), camelVersion)) {
             DependencyBuilder component = DependencyBuilder.create().setGroupId(dto.getGroupId())
-                    .setArtifactId(dto.getArtifactId()).setVersion(core.getCoordinate().getVersion());
+                    .setArtifactId(dto.getArtifactId()).setVersion(camelVersion);
             dependencyInstaller.install(project, component);
         }
 
@@ -239,7 +242,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
 
         // add camel maven plugin if missing
         plugin = MavenPluginBuilder.create()
-                .setCoordinate(createCoordinate("org.apache.camel", "camel-package-maven-plugin", core.getCoordinate().getVersion()));
+                .setCoordinate(createCoordinate("org.apache.camel", "camel-package-maven-plugin", camelVersion));
         plugin.addExecution(ExecutionBuilder.create().setId("prepare").addGoal("prepare-components").setPhase("generate-resources"));
         if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
             pluginFacet.addPlugin(plugin);
@@ -253,7 +256,7 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             pluginFacet.addPlugin(plugin);
         }
 
-        // need to add <resource> on the model as forge dont have a builder for this
+        // need to add <resource> on the model as forge do not have a builder for this
         Model model = maven.getModel();
         Resource resource = new Resource();
         resource.setDirectory("src/main/resources");
