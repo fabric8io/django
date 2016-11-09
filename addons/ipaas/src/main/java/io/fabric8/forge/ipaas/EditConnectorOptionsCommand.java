@@ -67,12 +67,14 @@ public class EditConnectorOptionsCommand extends AbstractIPaaSProjectCommand imp
 
     @Override
     public boolean isEnabled(UIContext context) {
-        boolean answer = super.isEnabled(context);
+        // TODO: https://github.com/fabric8io/django/issues/79
+        return true;
+        /*boolean answer = super.isEnabled(context);
         if (answer) {
             FileResource<?> fileResource = getCamelConnectorFile(context);
             answer = fileResource != null && fileResource.exists();
         }
-        return answer;
+        return answer;*/
     }
 
     @Override
