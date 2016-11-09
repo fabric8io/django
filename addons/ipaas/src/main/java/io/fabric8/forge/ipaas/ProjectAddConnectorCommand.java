@@ -33,7 +33,6 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizard;
 
-@Deprecated
 @FacetConstraint({ResourcesFacet.class})
 public class ProjectAddConnectorCommand extends AbstractIPaaSProjectCommand implements UIWizard {
 
@@ -46,6 +45,12 @@ public class ProjectAddConnectorCommand extends AbstractIPaaSProjectCommand impl
         return Metadata.forCommand(ProjectAddConnectorCommand.class)
                 .name("iPaaS: Add Connector").category(Categories.create(CATEGORY))
                 .description("Adds a Connector to the project");
+    }
+
+    @Override
+    public boolean isEnabled(UIContext context) {
+        // TODO: https://github.com/fabric8io/django/issues/79
+        return true;
     }
 
     @Override

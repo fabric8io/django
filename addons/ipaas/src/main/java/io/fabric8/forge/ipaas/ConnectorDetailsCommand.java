@@ -56,13 +56,15 @@ public class ConnectorDetailsCommand extends AbstractIPaaSProjectCommand {
 
     @Override
     public boolean isEnabled(UIContext context) {
-        boolean answer = super.isEnabled(context);
+        // TODO: https://github.com/fabric8io/django/issues/79
+        return true;
+        /*boolean answer = super.isEnabled(context);
         if (answer) {
             // we should only be enabled in non gui
             boolean gui = isRunningInGui(context);
             answer = !gui;
         }
-        return answer;
+        return answer;*/
     }
 
     @Override

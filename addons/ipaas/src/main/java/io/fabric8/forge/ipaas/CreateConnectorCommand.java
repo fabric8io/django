@@ -66,6 +66,12 @@ public class CreateConnectorCommand extends AbstractIPaaSProjectCommand implemen
     }
 
     @Override
+    public boolean isEnabled(UIContext context) {
+        // TODO: https://github.com/fabric8io/django/issues/79
+        return true;
+    }
+
+    @Override
     protected boolean requiresCamelSetup() {
         return false;
     }
