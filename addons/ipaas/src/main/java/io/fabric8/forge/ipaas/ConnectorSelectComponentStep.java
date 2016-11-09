@@ -256,6 +256,16 @@ public class ConnectorSelectComponentStep extends AbstractIPaaSProjectCommand im
             pluginFacet.addPlugin(plugin);
         }
 
+        // add fabric8-maven-plugin if missing
+        String fabric8Version = VersionHelper.fabric8MavenPluginVersion();
+        if (fabric8Version != null) {
+            plugin = MavenPluginBuilder.create()
+                    .setCoordinate(createCoordinate("io.fabric8", "fabric8-maven-plugin", fabric8Version));
+            if (!pluginFacet.hasPlugin(plugin.getCoordinate())) {
+                pluginFacet.addPlugin(plugin);
+            }
+        }
+
         // need to add <resource> on the model as forge do not have a builder for this
         Model model = maven.getModel();
         Resource resource = new Resource();
