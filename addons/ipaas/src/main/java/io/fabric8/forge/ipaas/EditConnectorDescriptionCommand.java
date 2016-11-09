@@ -38,7 +38,7 @@ import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 public class EditConnectorDescriptionCommand extends AbstractIPaaSProjectCommand {
 
     @Inject
-    @WithAttributes(label = "Description", required = true, description = "Description to be updated")
+    @WithAttributes(label = "Description", required = true, description = "Description of connector")
     private UIInput<String> description;
 
     private transient ConnectionCatalogDto dto;
