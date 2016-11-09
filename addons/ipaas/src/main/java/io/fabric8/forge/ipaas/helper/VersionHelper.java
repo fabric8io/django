@@ -15,8 +15,11 @@
  */
 package io.fabric8.forge.ipaas.helper;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+
+import static io.fabric8.forge.ipaas.helper.CamelCatalogHelper.loadText;
 
 public final class VersionHelper {
 
@@ -66,5 +69,37 @@ public final class VersionHelper {
         return version;
     }
 
+    public static String fabric8MavenPluginVersion() {
+        InputStream is = VersionHelper.class.getResourceAsStream("/META-INF/maven/io.fabric8.django/ipaas/pom.xml");
+        try {
+            String text = loadText(is);
+            return between(text, "<fabric8.maven.plugin.version>", "</fabric8.maven.plugin.version>");
+        } catch (IOException e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private static String between(String text, String after, String before) {
+        text = after(text, after);
+        if (text == null) {
+            return null;
+        }
+        return before(text, before);
+    }
+
+    private static String after(String text, String after) {
+        if (!text.contains(after)) {
+            return null;
+        }
+        return text.substring(text.indexOf(after) + after.length());
+    }
+
+    private static String before(String text, String before) {
+        if (!text.contains(before)) {
+            return null;
+        }
+        return text.substring(0, text.indexOf(before));
+    }
 
 }
