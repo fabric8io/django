@@ -41,6 +41,7 @@ public class ConnectionCatalogDto {
     private Map<String, String> componentValues;
     private String[] endpointOptions;
     private Map<String, String> endpointValues;
+    private String gitUrl;
 
     public String getBaseScheme() {
         return baseScheme;
@@ -176,6 +177,14 @@ public class ConnectionCatalogDto {
 
     public void setComponentValues(Map<String, String> componentValues) {
         this.componentValues = componentValues;
+    }
+
+    public String getGitUrl() {
+        return gitUrl;
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
     }
 
     @Override
