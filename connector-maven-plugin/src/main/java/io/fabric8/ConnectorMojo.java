@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -69,21 +70,52 @@ public class ConnectorMojo extends AbstractJarMojo {
     @Override
     public File createArchive() throws MojoExecutionException {
 
+        String gitUrl;
+
         // find the component dependency and get its .json file
 
         File file = new File(classesDirectory, "camel-connector.json");
         if (file.exists()) {
+
+            // we want to include the git url of the project
+            File gitFolder = GitHelper.findGitFolder();
+            try {
+                gitUrl = GitHelper.extractGitUrl(gitFolder);
+            } catch (IOException e) {
+                throw new MojoExecutionException("Cannot extract gitUrl due " + e.getMessage(), e);
+            }
+            if (gitUrl == null) {
+                getLog().warn("No .git directory found for connector");
+            }
+
             try {
 
                 ObjectMapper mapper = new ObjectMapper();
                 Map dto = mapper.readValue(file, Map.class);
+
+                // embed girUrl in camel-connector.json file
+                if (gitUrl != null) {
+                    String existingGitUrl = (String) dto.get("gitUrl");
+                    if (existingGitUrl == null || !existingGitUrl.equals(gitUrl)) {
+                        dto.put("gitUrl", gitUrl);
+                        // update file
+                        mapper.writerWithDefaultPrettyPrinter().writeValue(file, dto);
+                        // update source file also
+                        File root = classesDirectory.getParentFile().getParentFile();
+                        file = new File(root, "src/main/resources/camel-connector.json");
+                        if (file.exists()) {
+                            getLog().info("Updating gitUrl to " + file);
+                            mapper.writerWithDefaultPrettyPrinter().writeValue(file, dto);
+                        }
+                    }
+                }
 
                 File schema = embedCamelComponentSchema(file);
                 if (schema != null) {
                     String json = loadText(new FileInputStream(schema));
 
                     List<Map<String, String>> rows = parseJsonSchema("component", json, false);
-                    String header = buildComponentHeaderSchema(rows, dto);
+                    String header = buildComponentHeaderSchema(rows, dto, gitUrl);
                     getLog().debug(header);
 
                     rows = parseJsonSchema("componentProperties", json, true);
@@ -225,7 +257,7 @@ public class ConnectorMojo extends AbstractJarMojo {
         return sb.toString();
     }
 
-    private String buildComponentHeaderSchema(List<Map<String, String>> rows, Map dto) throws Exception {
+    private String buildComponentHeaderSchema(List<Map<String, String>> rows, Map dto, String gitUrl) throws Exception {
         String baseScheme = (String) dto.get("baseScheme");
         String source = (String) dto.get("source");
         String title = (String) dto.get("name");
@@ -255,8 +287,9 @@ public class ConnectorMojo extends AbstractJarMojo {
 
         StringBuilder sb = new StringBuilder();
         sb.append("  \"component\": {\n");
+        sb.append("    \"girUrl\": \"" + nullSafe(gitUrl) + "\",\n");
         sb.append("    \"kind\": \"component\",\n");
-        sb.append("    \"baseScheme\": \"" + baseScheme + "\",\n");
+        sb.append("    \"baseScheme\": \"" + nullSafe(baseScheme) + "\",\n");
         sb.append("    \"scheme\": \"" + scheme + "\",\n");
         sb.append("    \"syntax\": \"" + syntax + "\",\n");
         sb.append("    \"title\": \"" + title + "\",\n");
@@ -285,6 +318,10 @@ public class ConnectorMojo extends AbstractJarMojo {
         sb.append("  },\n");
 
         return sb.toString();
+    }
+
+    private static String nullSafe(String text) {
+        return text != null ? text : "";
     }
 
     /**
