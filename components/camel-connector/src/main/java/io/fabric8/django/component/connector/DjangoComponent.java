@@ -24,6 +24,8 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.catalog.CamelCatalog;
@@ -39,6 +41,10 @@ import org.slf4j.LoggerFactory;
  * Base class for Camel Connector components.
  */
 public abstract class DjangoComponent extends DefaultComponent {
+
+    private static final Pattern JAVA_TYPE_PATTERN = Pattern.compile("\"javaType\"\\s?:\\s?\"([\\w|.]+)\".*");
+    private static final Pattern BASE_JAVA_TYPE_PATTERN = Pattern.compile("\"baseJavaType\"\\s?:\\s?\"([\\w|.]+)\".*");
+    private static final Pattern BASE_SCHEMA_PATTERN = Pattern.compile("\"baseScheme\"\\s?:\\s?\"([\\w|.]+)\".*");
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -240,9 +246,9 @@ public abstract class DjangoComponent extends DefaultComponent {
     private String extractJavaType(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"javaType\":")) {
-                String answer = line.substring(12);
-                return answer.substring(0, answer.length() - 2);
+            Matcher matcher = JAVA_TYPE_PATTERN.matcher(line);
+            if (matcher.matches()) {
+                return matcher.group(1);
             }
         }
         return null;
@@ -251,9 +257,9 @@ public abstract class DjangoComponent extends DefaultComponent {
     private String extractBaseJavaType(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"baseJavaType\":")) {
-                String answer = line.substring(16);
-                return answer.substring(0, answer.length() - 2);
+            Matcher matcher = BASE_JAVA_TYPE_PATTERN.matcher(line);
+            if (matcher.matches()) {
+                return matcher.group(1);
             }
         }
         return null;
@@ -262,9 +268,9 @@ public abstract class DjangoComponent extends DefaultComponent {
     private String extractBaseScheme(List<String> json) {
         for (String line : json) {
             line = line.trim();
-            if (line.startsWith("\"baseScheme\":")) {
-                String answer = line.substring(14);
-                return answer.substring(0, answer.length() - 2);
+            Matcher matcher = BASE_SCHEMA_PATTERN.matcher(line);
+            if (matcher.matches()) {
+                return matcher.group(1);
             }
         }
         return null;
