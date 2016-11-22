@@ -16,6 +16,8 @@
 package io.fabric8.forge.ipaas.repository;
 
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -29,9 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -54,6 +59,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
     private final Set<NexusArtifactDto> indexedArtifacts = new LinkedHashSet<>();
     private final Map<NexusArtifactDto, ConnectionCatalogDto> connectors = new ConcurrentHashMap<>();
     private volatile ScheduledExecutorService executorService;
+    private AtomicBoolean started = new AtomicBoolean();
 
     private static final String CLASSIFIER = "camel-connector";
 
@@ -76,8 +82,20 @@ public class NexusConnectionRepository implements ConnectionRepository {
         this.delay = delay;
     }
 
+    // we want to eager start ourselves
+    public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+        start();
+    }
+
     @PostConstruct
     public void start() {
+        if (started.compareAndSet(false, true)) {
+            System.out.println("NexusConnectionRepository is already started");
+            return;
+        }
+
+        System.out.println("Starting NexusConnectionRepository");
+
         if (nexusUrl == null || nexusUrl.isEmpty()) {
             System.out.println("Nexus service not found. Indexing Nexus is not enabled!");
             return;
@@ -91,7 +109,10 @@ public class NexusConnectionRepository implements ConnectionRepository {
                 System.out.println("Indexing Nexus " + nexusUrl + " +++ start +++");
                 indexNexus();
             } catch (Throwable e) {
-                System.err.println("Error indexing Nexus " + nexusUrl + " due " + e.getMessage());
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                System.err.println("Error indexing Nexus " + nexusUrl + " due " + e.getMessage() + "\n" + sw.toString());
             } finally {
                 System.out.println("Indexing Nexus " + nexusUrl + " +++ end +++");
             }
@@ -103,6 +124,7 @@ public class NexusConnectionRepository implements ConnectionRepository {
         if (executorService != null) {
             executorService.shutdownNow();
         }
+        started.set(false);
     }
 
     @Override
