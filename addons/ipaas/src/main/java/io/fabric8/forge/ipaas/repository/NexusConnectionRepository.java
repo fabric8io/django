@@ -112,7 +112,13 @@ public class NexusConnectionRepository implements ConnectionRepository {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                System.err.println("Error indexing Nexus " + nexusUrl + " due " + e.getMessage() + "\n" + sw.toString());
+
+                if (sw.toString().contains("UnknownHostException")) {
+                    // less noise if its unknown host
+                    System.err.println("Error indexing Nexus " + nexusUrl + " due unknown hosts: " + e.getMessage());
+                } else {
+                    System.err.println("Error indexing Nexus " + nexusUrl + " due " + e.getMessage() + "\n" + sw.toString());
+                }
             } finally {
                 System.out.println("Indexing Nexus " + nexusUrl + " +++ end +++");
             }
