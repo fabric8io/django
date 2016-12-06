@@ -32,7 +32,7 @@
   <name>Fabric8 :: Django :: Components</name>
 
   <properties>
-    <camel.version>2.18.0</camel.version>
+    <camel.version>2.18.1</camel.version>
   </properties>
 
   <modules>
