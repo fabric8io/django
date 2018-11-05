@@ -1,4 +1,3 @@
-# Deprecated
-
-This module has been deprecated and iPaaS related work is happening at: https://github.com/syndesisio/ 
-
+<aside class="notice">
+This repository has been archived and resetted, you can still look at the git history for the old reference.
+</aside>
